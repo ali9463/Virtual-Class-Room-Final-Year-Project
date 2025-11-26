@@ -10,6 +10,9 @@ app.use(express.urlencoded({ extended: true }));
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
+      "https://admin-coral-zeta.vercel.app",
+      "https://teacher-ecru.vercel.app/",
+      "https://student-navy-seven.vercel.app",
       "https://fyp-backend-henna.vercel.app",
       "http://localhost:5173", // Vite default dev port (admin, student, teacher)
       "http://localhost:5174", // Student frontend
