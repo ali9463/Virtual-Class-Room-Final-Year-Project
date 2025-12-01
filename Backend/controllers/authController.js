@@ -50,7 +50,8 @@ exports.adminLogin = async (req, res) => {
 exports.signup = async (req, res) => {
   try {
     const {
-      name,
+      firstName,
+      lastName,
       email,
       password,
       role,
@@ -59,17 +60,19 @@ exports.signup = async (req, res) => {
       rollSerial,
       section,
       department,
+      profileImage,
     } = req.body;
 
-    if (!name || !password) {
+    if (!firstName || !lastName || !password) {
       return res
         .status(400)
-        .json({ message: "Name and password are required." });
+        .json({ message: "First name, last name, and password are required." });
     }
 
+    const name = `${firstName} ${lastName}`;
     const userRole = role ? role.toLowerCase() : "student";
 
-    // For students, all roll components are required
+    // For students, all roll components and profile image are required
     if (userRole === "student") {
       if (!email || !rollYear || !rollDept || !rollSerial || !section) {
         return res.status(400).json({
@@ -77,8 +80,13 @@ exports.signup = async (req, res) => {
             "Email and roll number components (year, dept, serial) and section are required for students.",
         });
       }
-      // Validate section (only A, B, C allowed)
-      if (!["A", "B", "C","D","E","F"].includes(section.toUpperCase())) {
+      if (!profileImage) {
+        return res.status(400).json({
+          message: "Profile picture is required for students.",
+        });
+      }
+      // Validate section (only A, B, C, D, E, F allowed)
+      if (!["A", "B", "C", "D", "E", "F"].includes(section.toUpperCase())) {
         return res.status(400).json({
           message: "Section must be Filled",
         });
@@ -133,6 +141,7 @@ exports.signup = async (req, res) => {
         rollDept,
         rollSerial,
         section: section.toUpperCase(),
+        profileImage: profileImage || null,
       };
       const user = new User(userData);
       await user.save();

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
-import { GraduationCap, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, ArrowLeft, Upload, X } from 'lucide-react';
+import axios from 'axios';
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +16,8 @@ const SignupPage = () => {
     rollYear: '',
     rollDept: '',
     rollSerial: '',
-    section: ''
+    section: '',
+    profileImage: null
   });
   const [role, setRole] = useState('student');
   const [years, setYears] = useState([]);
@@ -24,18 +26,22 @@ const SignupPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const { signup } = useAuth();
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-  // Fetch years and departments
+  // Fetch years and departments with cache busting
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const timestamp = new Date().getTime();
         const [yearsRes, deptsRes] = await Promise.all([
-          fetch(`${API}/api/admin/years`).then(r => r.json()),
-          fetch(`${API}/api/admin/departments`).then(r => r.json())
+          fetch(`${API}/api/admin/years?t=${timestamp}`).then(r => r.json()),
+          fetch(`${API}/api/admin/departments?t=${timestamp}`).then(r => r.json())
         ]);
         setYears(yearsRes || []);
         setDepts(deptsRes || []);
@@ -53,11 +59,68 @@ const SignupPage = () => {
     });
   };
 
+  const handleImageUpload = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Only JPG, PNG, or WebP images are allowed');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const form = new FormData();
+      form.append('image', file);
+
+      const res = await axios.post(`${API}/api/upload/image`, form, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (res.data && res.data.url) {
+        setFormData(prev => ({ ...prev, profileImage: res.data.url }));
+        setProfileImagePreview(res.data.url);
+        toast.success('Profile picture uploaded successfully');
+      } else {
+        toast.error('Upload failed');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, profileImage: null }));
+    setProfileImagePreview(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.firstName || !formData.lastName || !formData.password) {
       setError('Please fill in all required fields');
+      return;
+    }
+
+    if (!formData.profileImage) {
+      setError('Profile picture is required');
       return;
     }
 
@@ -88,7 +151,11 @@ const SignupPage = () => {
 
     setLoading(true);
     setError('');
-    const payload = { ...formData, role };
+    const payload = {
+      ...formData,
+      role,
+      profileImage: formData.profileImage
+    };
     const res = await signup(payload);
     if (res.success) {
       toast.success('Account created successfully');
@@ -128,7 +195,56 @@ const SignupPage = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
 
-
+            {/* Profile Picture Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                Profile Picture *
+              </label>
+              <div className="flex items-center space-x-6">
+                <div className="flex-shrink-0">
+                  {profileImagePreview ? (
+                    <img
+                      src={profileImagePreview}
+                      alt="Profile Preview"
+                      className="w-24 h-24 rounded-lg object-cover border-2 border-cyan-500"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-600">
+                      <span className="text-gray-400 text-sm">No image</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImageUpload}
+                    className="w-full flex items-center justify-center gap-2 bg-cyan-500/80 text-white font-semibold py-3 px-4 rounded-lg hover:bg-cyan-500 transition-colors disabled:opacity-50"
+                    disabled={uploading}
+                  >
+                    <Upload className="w-5 h-5" />
+                    {uploading ? 'Uploading...' : 'Upload Picture'}
+                  </button>
+                  {profileImagePreview && (
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="w-full flex items-center justify-center gap-2 bg-red-500/50 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      Remove Picture
+                    </button>
+                  )}
+                  <p className="text-xs text-gray-400">JPG, PNG or WebP. Max 5MB</p>
+                </div>
+              </div>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>

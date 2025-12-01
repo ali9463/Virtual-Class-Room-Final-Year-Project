@@ -9,8 +9,8 @@ const auth = require("../middlewares/auth");
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// POST /api/upload/image
-router.post("/image", auth, upload.single("image"), async (req, res) => {
+// POST /api/upload/image - optional auth (for signup without token)
+router.post("/image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file)
       return res.status(400).json({ message: "No file uploaded." });
