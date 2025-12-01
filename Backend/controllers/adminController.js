@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Teacher = require("../models/Teachers");
 const Year = require("../models/Year");
 const Department = require("../models/Department");
+const Section = require("../models/Section");
 
 // Get all years
 exports.getYears = async (req, res) => {
@@ -67,7 +68,10 @@ exports.deleteYear = async (req, res) => {
 // Get all departments
 exports.getDepartments = async (req, res) => {
   try {
-    const depts = await Department.find().sort({ code: 1 });
+    const depts = await Department.find()
+      .populate("yearId")
+      .populate("sections")
+      .sort({ code: 1 });
     res.json(depts);
   } catch (err) {
     console.error(err);
@@ -78,11 +82,17 @@ exports.getDepartments = async (req, res) => {
 // Create department
 exports.createDepartment = async (req, res) => {
   try {
-    const { code, label } = req.body;
-    if (!code || !label) {
-      return res.status(400).json({ message: "Code and label are required." });
+    const { code, label, yearId } = req.body;
+    if (!code || !label || !yearId) {
+      return res
+        .status(400)
+        .json({ message: "Code, label, and year are required." });
     }
-    const dept = new Department({ code: code.toUpperCase(), label });
+    const dept = new Department({
+      code: code.toUpperCase(),
+      label,
+      yearId,
+    });
     await dept.save();
     res.status(201).json(dept);
   } catch (err) {
@@ -100,10 +110,10 @@ exports.createDepartment = async (req, res) => {
 exports.updateDepartment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, label } = req.body;
+    const { code, label, yearId } = req.body;
     const dept = await Department.findByIdAndUpdate(
       id,
-      { code: code?.toUpperCase(), label },
+      { code: code?.toUpperCase(), label, yearId },
       { new: true }
     );
     if (!dept)
@@ -208,6 +218,93 @@ exports.deleteUser = async (req, res) => {
     const user = await User.findByIdAndDelete(id);
     if (!user) return res.status(404).json({ message: "User not found." });
     res.json({ message: "User deleted." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Get all sections
+exports.getSections = async (req, res) => {
+  try {
+    const sections = await Section.find()
+      .populate("departmentId")
+      .sort({ code: 1 });
+    res.json(sections);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Get sections for a specific department
+exports.getSectionsByDepartment = async (req, res) => {
+  try {
+    const { deptId } = req.params;
+    const sections = await Section.find({ departmentId: deptId }).sort({
+      code: 1,
+    });
+    res.json(sections);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Create section
+exports.createSection = async (req, res) => {
+  try {
+    const { code, departmentId } = req.body;
+    if (!code || !departmentId) {
+      return res
+        .status(400)
+        .json({ message: "Code and department ID are required." });
+    }
+
+    // Verify department exists
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+      return res.status(404).json({ message: "Department not found." });
+    }
+
+    const section = new Section({
+      code: code.toUpperCase(),
+      departmentId,
+    });
+    await section.save();
+
+    // Add section to department's sections array
+    await Department.findByIdAndUpdate(departmentId, {
+      $push: { sections: section._id },
+    });
+
+    const populatedSection = await section.populate("departmentId");
+    res.status(201).json(populatedSection);
+  } catch (err) {
+    console.error(err);
+    if (err.code === 11000) {
+      return res
+        .status(400)
+        .json({ message: "This section already exists for this department." });
+    }
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Delete section
+exports.deleteSection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const section = await Section.findByIdAndDelete(id);
+    if (!section)
+      return res.status(404).json({ message: "Section not found." });
+
+    // Remove section from department
+    await Department.findByIdAndUpdate(section.departmentId, {
+      $pull: { sections: section._id },
+    });
+
+    res.json({ message: "Section deleted." });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error." });

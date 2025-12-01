@@ -22,6 +22,7 @@ const SignupPage = () => {
   const [role, setRole] = useState('student');
   const [years, setYears] = useState([]);
   const [depts, setDepts] = useState([]);
+  const [sections, setSections] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
@@ -39,24 +40,61 @@ const SignupPage = () => {
     const fetchData = async () => {
       try {
         const timestamp = new Date().getTime();
-        const [yearsRes, deptsRes] = await Promise.all([
+        const [yearsRes, deptsRes, sectionsRes] = await Promise.all([
           fetch(`${API}/api/admin/years?t=${timestamp}`).then(r => r.json()),
-          fetch(`${API}/api/admin/departments?t=${timestamp}`).then(r => r.json())
+          fetch(`${API}/api/admin/departments?t=${timestamp}`).then(r => r.json()),
+          fetch(`${API}/api/admin/sections?t=${timestamp}`).then(r => r.json())
         ]);
         setYears(yearsRes || []);
         setDepts(deptsRes || []);
+        setSections(sectionsRes || []);
       } catch (err) {
-        console.error('Error fetching years/depts:', err);
+        console.error('Error fetching data:', err);
       }
     };
     fetchData();
   }, [API]);
 
+  // Get departments for selected year
+  const getDeptsForYear = (yearCode) => {
+    return depts.filter(d => d.yearId?.code === yearCode);
+  };
+
+  // Get the selected department object by code
+  const getSelectedDept = (deptCode) => {
+    return depts.find(d => d.code === deptCode);
+  };
+
+  // Get sections for selected department
+  const getSectionsForDept = (deptCode) => {
+    const selectedDept = getSelectedDept(deptCode);
+    if (!selectedDept) return [];
+    return sections.filter(s => s.departmentId?._id === selectedDept._id);
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Reset dependent fields when year changes
+    if (name === 'rollYear') {
+      setFormData(prev => ({
+        ...prev,
+        rollDept: '',
+        section: ''
+      }));
+    }
+
+    // Reset section when department changes
+    if (name === 'rollDept') {
+      setFormData(prev => ({
+        ...prev,
+        section: ''
+      }));
+    }
   };
 
   const handleImageUpload = () => {
@@ -126,11 +164,6 @@ const SignupPage = () => {
 
     if (role === 'student' && (!formData.rollYear || !formData.rollDept || !formData.rollSerial || !formData.section)) {
       setError('Please provide year, department, serial number, and section');
-      return;
-    }
-
-    if (role === 'student' && !['A', 'B', 'C', 'D', 'E', 'F'].includes(formData.section.toUpperCase())) {
-      setError('Section must be filled');
       return;
     }
 
@@ -289,7 +322,7 @@ const SignupPage = () => {
                       name="rollYear"
                       value={formData.rollYear}
                       onChange={handleChange}
-                      className="w-full px-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white text-sm"
+                      className="w-full px-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
                     >
                       <option value="">Select Year</option>
                       {years.map(y => (
@@ -304,11 +337,12 @@ const SignupPage = () => {
                       name="rollDept"
                       value={formData.rollDept}
                       onChange={handleChange}
-                      className="w-full px-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white text-sm"
+                      disabled={!formData.rollYear}
+                      className="w-full px-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">Select Dept</option>
-                      {depts.map(d => (
-                        <option key={d._id} value={d.code}>{d.code} </option>
+                      {getDeptsForYear(formData.rollYear).map(d => (
+                        <option key={d._id} value={d.code}>{d.code}</option>
                       ))}
                     </select>
                   </div>
@@ -332,15 +366,13 @@ const SignupPage = () => {
                     name="section"
                     value={formData.section}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
+                    disabled={!formData.rollDept}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="">Select Section</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                    <option value="E">E</option>
-                    <option value="F">F</option>
+                    {getSectionsForDept(formData.rollDept).map(s => (
+                      <option key={s._id} value={s.code}>{s.code}</option>
+                    ))}
                   </select>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import ChooseClasses from './pages/ChooseClasses';
 import ClassroomMeeting from './pages/ClassroomMeeting';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -44,6 +45,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/choose-classes" element={<ChooseClasses />} />
 
             <Route
               path="/dashboard"

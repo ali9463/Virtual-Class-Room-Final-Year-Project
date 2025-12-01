@@ -10,6 +10,10 @@ const {
   createDepartment,
   updateDepartment,
   deleteDepartment,
+  getSections,
+  getSectionsByDepartment,
+  createSection,
+  deleteSection,
   getUsers,
   getUserById,
   updateUser,
@@ -27,6 +31,12 @@ router.get("/departments", getDepartments);
 router.post("/departments", adminAuth, createDepartment);
 router.put("/departments/:id", adminAuth, updateDepartment);
 router.delete("/departments/:id", adminAuth, deleteDepartment);
+
+// Sections
+router.get("/sections", getSections);
+router.get("/sections/department/:deptId", getSectionsByDepartment);
+router.post("/sections", adminAuth, createSection);
+router.delete("/sections/:id", adminAuth, deleteSection);
 
 // Users
 router.get("/users", adminAuth, getUsers);

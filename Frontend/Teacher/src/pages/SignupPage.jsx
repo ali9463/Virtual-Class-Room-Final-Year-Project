@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
-import { GraduationCap, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, ArrowLeft, Upload, X } from 'lucide-react';
+import axios from 'axios';
 
 const SignupPage = () => {
   const [formData, setFormData] = useState({
@@ -12,31 +13,19 @@ const SignupPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    department: ''
+    profileImage: null
   });
-  const [depts, setDepts] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const { signup } = useAuth();
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL || 'http://localhost:7000';
-
-  // Fetch departments
-  useEffect(() => {
-    const fetchDepts = async () => {
-      try {
-        const res = await fetch(`${API}/api/admin/departments`);
-        const data = await res.json();
-        setDepts(data || []);
-      } catch (err) {
-        console.error('Error fetching departments:', err);
-      }
-    };
-    fetchDepts();
-  }, [API]);
 
   const handleChange = (e) => {
     setFormData({
@@ -45,11 +34,68 @@ const SignupPage = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleImageUpload = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Only JPG, PNG, or WebP images are allowed');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const form = new FormData();
+      form.append('image', file);
+
+      const res = await axios.post(`${API}/api/upload/image`, form, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (res.data && res.data.url) {
+        setFormData(prev => ({ ...prev, profileImage: res.data.url }));
+        setProfileImagePreview(res.data.url);
+        toast.success('Profile picture uploaded successfully');
+      } else {
+        toast.error('Upload failed');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, profileImage: null }));
+    setProfileImagePreview(null);
+  };
+
+  const handleNext = async (e) => {
     e.preventDefault();
 
-    if (!formData.firstName || !formData.lastName || !formData.password || !formData.email || !formData.department) {
+    if (!formData.firstName || !formData.lastName || !formData.password || !formData.email) {
       setError('Please fill in all required fields');
+      return;
+    }
+
+    if (!formData.profileImage) {
+      setError('Profile picture is required');
       return;
     }
 
@@ -63,18 +109,10 @@ const SignupPage = () => {
       return;
     }
 
-    setLoading(true);
     setError('');
-    const payload = { ...formData, role: 'teacher' };
-    const res = await signup(payload);
-    if (res.success) {
-      toast.success('Account created successfully');
-      navigate('/dashboard');
-    } else {
-      toast.error(res.message || 'Failed to create account');
-      setError(res.message || 'Failed to create account');
-    }
-    setLoading(false);
+    // Store form data in session storage to use in ChooseClasses
+    sessionStorage.setItem('teacherFormData', JSON.stringify(formData));
+    navigate('/choose-classes');
   };
 
   return (
@@ -98,14 +136,63 @@ const SignupPage = () => {
               <GraduationCap className="w-8 h-8 text-cyan-400" />
               <span className="text-2xl font-bold text-white">Virtual CUI</span>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-gray-300">Join thousands of students and teachers in the future of education</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Create Teacher Account</h1>
+            <p className="text-gray-300">Step 1 of 2: Basic Information</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleNext} className="space-y-6">
 
-            {/* Teacher account signup */}
+            {/* Profile Picture Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                Profile Picture *
+              </label>
+              <div className="flex items-center space-x-6">
+                <div className="flex-shrink-0">
+                  {profileImagePreview ? (
+                    <img
+                      src={profileImagePreview}
+                      alt="Profile Preview"
+                      className="w-24 h-24 rounded-lg object-cover border-2 border-cyan-500"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-600">
+                      <span className="text-gray-400 text-sm">No image</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImageUpload}
+                    className="w-full flex items-center justify-center gap-2 bg-cyan-500/80 text-white font-semibold py-3 px-4 rounded-lg hover:bg-cyan-500 transition-colors disabled:opacity-50"
+                    disabled={uploading}
+                  >
+                    <Upload className="w-5 h-5" />
+                    {uploading ? 'Uploading...' : 'Upload Picture'}
+                  </button>
+                  {profileImagePreview && (
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="w-full flex items-center justify-center gap-2 bg-red-500/50 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      Remove Picture
+                    </button>
+                  )}
+                  <p className="text-xs text-gray-400">JPG, PNG or WebP. Max 5MB</p>
+                </div>
+              </div>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -139,8 +226,6 @@ const SignupPage = () => {
               </div>
             </div>
 
-            {/* Teacher signup does not require roll number */}
-
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Email *
@@ -154,24 +239,6 @@ const SignupPage = () => {
                 className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
                 placeholder="Enter email"
               />
-            </div>
-
-            <div>
-              <label htmlFor="department" className="block text-sm font-medium text-gray-300 mb-2">
-                Department *
-              </label>
-              <select
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
-              >
-                <option value="">Select Department</option>
-                {depts.map(d => (
-                  <option key={d._id} value={d.code}>{d.code} </option>
-                ))}
-              </select>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -238,7 +305,7 @@ const SignupPage = () => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 py-3 px-4 rounded-lg text-white font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? 'Processing...' : 'Next: Select Classes'}
             </button>
           </form>
 
@@ -252,8 +319,8 @@ const SignupPage = () => {
             </p>
           </div>
         </div>
-      </motion.div >
-    </div >
+      </motion.div>
+    </div>
   );
 };
 

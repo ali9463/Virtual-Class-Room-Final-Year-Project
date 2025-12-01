@@ -92,11 +92,16 @@ exports.signup = async (req, res) => {
         });
       }
     } else if (userRole === "teacher") {
-      // For teachers, email and department are required
+      // For teachers, email, department, and profile image are required
       if (!email || !department) {
         return res
           .status(400)
           .json({ message: "Email and department are required for teachers." });
+      }
+      if (!profileImage) {
+        return res.status(400).json({
+          message: "Profile picture is required for teachers.",
+        });
       }
     }
 
@@ -123,6 +128,7 @@ exports.signup = async (req, res) => {
         email: email.toLowerCase(),
         password: hashed,
         department,
+        profileImage: profileImage || null,
         role: "teacher",
       };
       const teacher = new Teacher(teacherData);

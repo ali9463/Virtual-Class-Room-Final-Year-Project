@@ -46,10 +46,12 @@ export const AuthProvider = ({ children }) => {
   const signup = async (userData) => {
     try {
       const payload = {
-        name: `${userData.firstName} ${userData.lastName}`,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         email: userData.email || '',
         password: userData.password,
-        role: userData.role || 'student'
+        role: userData.role || 'student',
+        profileImage: userData.profileImage || null
       };
 
       // For students, add roll number components
