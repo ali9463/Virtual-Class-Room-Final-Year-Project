@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
-import { GraduationCap, Eye, EyeOff, ArrowLeft, Upload, X } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, ArrowLeft, Upload, X, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import axios from 'axios';
 
 const SignupPage = () => {
@@ -31,9 +31,129 @@ const SignupPage = () => {
   const [profileImagePreview, setProfileImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Email verification states
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [emailValidating, setEmailValidating] = useState(false);
+  const [sendingOTP, setSendingOTP] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+
   const { signup } = useAuth();
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+  // OTP Timer effect
+  useEffect(() => {
+    let timer;
+    if (otpTimer > 0) {
+      timer = setInterval(() => setOtpTimer(prev => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [otpTimer]);
+
+  // Email validation - check if email is valid format
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate email existence and format
+  const validateEmail = async () => {
+    if (!formData.email) {
+      setEmailError('Email is required');
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setEmailError('Invalid email format');
+      return;
+    }
+
+    setEmailValidating(true);
+    setEmailError('');
+    try {
+      const res = await axios.post(`${API}/api/auth/check-email`, {
+        email: formData.email
+      });
+
+      if (res.data.exists) {
+        setEmailError('Email already registered');
+      } else {
+        setEmailError('');
+        toast.success('Email is valid and available');
+      }
+    } catch (err) {
+      setEmailError(err.response?.data?.message || 'Error validating email');
+    } finally {
+      setEmailValidating(false);
+    }
+  };
+
+  // Send OTP to email
+  const sendOTP = async () => {
+    if (!formData.email) {
+      setEmailError('Email is required');
+      return;
+    }
+
+    if (emailError) {
+      toast.error('Please fix email errors first');
+      return;
+    }
+
+    setSendingOTP(true);
+    setOtpError('');
+    try {
+      const res = await axios.post(`${API}/api/auth/send-otp`, {
+        email: formData.email,
+        userType: 'Student'
+      });
+
+      setOtpSent(true);
+      setOtpTimer(300); // 5 minutes
+      toast.success('OTP sent to your email');
+    } catch (err) {
+      setOtpError(err.response?.data?.message || 'Failed to send OTP');
+      toast.error('Failed to send OTP');
+    } finally {
+      setSendingOTP(false);
+    }
+  };
+
+  // Verify OTP
+  const verifyOTPCode = async () => {
+    if (!otp) {
+      setOtpError('Please enter OTP');
+      return;
+    }
+
+    if (otp.length !== 4) {
+      setOtpError('OTP must be 4 digits');
+      return;
+    }
+
+    setVerifyingOTP(true);
+    setOtpError('');
+    try {
+      const res = await axios.post(`${API}/api/auth/verify-otp`, {
+        email: formData.email,
+        otp: otp
+      });
+
+      setEmailVerified(true);
+      setOtp('');
+      setOtpSent(false);
+      toast.success('Email verified successfully');
+    } catch (err) {
+      setOtpError(err.response?.data?.message || 'Invalid OTP');
+    } finally {
+      setVerifyingOTP(false);
+    }
+  };
 
   // Fetch years and departments with cache busting
   useEffect(() => {
@@ -157,6 +277,11 @@ const SignupPage = () => {
       return;
     }
 
+    if (!formData.email || !emailVerified) {
+      setError('Please verify your email before proceeding');
+      return;
+    }
+
     if (!formData.profileImage) {
       setError('Profile picture is required');
       return;
@@ -164,11 +289,6 @@ const SignupPage = () => {
 
     if (role === 'student' && (!formData.rollYear || !formData.rollDept || !formData.rollSerial || !formData.section)) {
       setError('Please provide year, department, serial number, and section');
-      return;
-    }
-
-    if (role === 'teacher' && !formData.email) {
-      setError('Teachers must provide an email');
       return;
     }
 
@@ -380,17 +500,98 @@ const SignupPage = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email {role === 'teacher' ? '*' : ''}
+                Email {role === 'student' ? '*' : ''}
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all"
-                placeholder="Enter email"
-              />
+              <div className="space-y-3">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setEmailVerified(false);
+                    setOtpSent(false);
+                  }}
+                  disabled={emailVerified}
+                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="Enter email"
+                />
+
+                {/* Email validation message */}
+                {emailError && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    {emailError}
+                  </div>
+                )}
+
+                {emailVerified && (
+                  <div className="flex items-center gap-2 text-green-400 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    Email verified
+                  </div>
+                )}
+
+                {/* OTP Section */}
+                {!emailVerified && formData.email && isValidEmail(formData.email) && (
+                  <div className="space-y-3 pt-3 border-t border-gray-600">
+                    {!otpSent ? (
+                      <button
+                        type="button"
+                        onClick={sendOTP}
+                        disabled={sendingOTP}
+                        className="w-full px-4 py-3 bg-cyan-500/80 text-white font-semibold rounded-lg hover:bg-cyan-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {sendingOTP ? 'Sending OTP...' : 'Send OTP'}
+                      </button>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            maxLength="4"
+                            value={otp}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '');
+                              setOtp(val);
+                              setOtpError('');
+                            }}
+                            placeholder="Enter 4-digit OTP"
+                            className="flex-1 px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-500 focus:outline-none text-center tracking-widest font-bold text-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={verifyOTPCode}
+                            disabled={verifyingOTP || otp.length !== 4}
+                            className="px-4 py-3 bg-green-500/80 text-white font-semibold rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                          >
+                            {verifyingOTP ? 'Verifying...' : 'Verify'}
+                          </button>
+                        </div>
+
+                        {otpError && (
+                          <div className="flex items-center gap-2 text-red-400 text-sm">
+                            <AlertCircle className="w-4 h-4" />
+                            {otpError}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          {otpTimer > 0 ? (
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              OTP expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                            </div>
+                          ) : (
+                            <span>OTP expired</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">

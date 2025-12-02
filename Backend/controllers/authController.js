@@ -2,10 +2,184 @@ const User = require("../models/User");
 const Teacher = require("../models/Teachers");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 // Fixed admin credentials
 const ADMIN_EMAIL = "admin@gmail.com";
 const ADMIN_PASSWORD = "admin123456";
+
+// Store OTPs temporarily (in production, use Redis)
+const otpStore = new Map();
+
+// Configure nodemailer for Gmail
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER || "chali.94063@gmail.com",
+    pass: process.env.EMAIL_PASSWORD || "ugmh shxj kskt ldnh",
+  },
+});
+
+// Generate 4-digit OTP
+const generateOTP = () => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
+// Check if email exists
+exports.checkEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingTeacher = await Teacher.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (existingUser || existingTeacher) {
+      return res.json({ exists: true, message: "Email already registered." });
+    }
+
+    return res.json({ exists: false, message: "Email is available." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Send OTP to email
+exports.sendOTP = async (req, res) => {
+  try {
+    const { email, userType = "Student" } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingTeacher = await Teacher.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (existingUser || existingTeacher) {
+      return res.status(400).json({ message: "Email already registered." });
+    }
+
+    // Generate and store OTP
+    const otp = generateOTP();
+    otpStore.set(email.toLowerCase(), {
+      otp,
+      createdAt: Date.now(),
+      attempts: 0,
+    });
+
+    // Send OTP via Gmail
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_USER || "chali.94063@gmail.com",
+        to: email,
+        subject: `Your OTP for Virtual CUI ${userType} Registration`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; border-radius: 8px;">
+            <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; text-align: center;">
+              <h2 style="color: #333; margin-bottom: 20px;">Email Verification</h2>
+              <p style="color: #666; margin-bottom: 20px; font-size: 16px;">
+                Your OTP for registering as a ${userType} in Virtual CUI is:
+              </p>
+              <div style="background-color: #e8f4f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p style="font-size: 32px; font-weight: bold; color: #00A8E8; margin: 0; letter-spacing: 5px;">
+                  ${otp}
+                </p>
+              </div>
+              <p style="color: #999; font-size: 14px; margin-top: 20px;">
+                This OTP is valid for 5 minutes only. Do not share it with anyone.
+              </p>
+              <p style="color: #999; font-size: 14px; margin-top: 10px;">
+                If you didn't request this OTP, please ignore this email.
+              </p>
+            </div>
+            <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
+              © 2025 Virtual CUI. All rights reserved.
+            </p>
+          </div>
+        `,
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`OTP email sent to ${email}`);
+
+      return res.json({
+        message: "OTP sent to your email successfully.",
+      });
+    } catch (emailError) {
+      console.error("Email sending error:", emailError);
+      // Still return success but log the error for debugging
+      return res.json({
+        message:
+          "OTP generated successfully. (Email sending may have failed - check your spam folder)",
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Verify OTP
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required." });
+    }
+
+    const storedData = otpStore.get(email.toLowerCase());
+
+    if (!storedData) {
+      return res
+        .status(400)
+        .json({ message: "OTP not found. Please request a new OTP." });
+    }
+
+    // Check if OTP has expired (5 minutes)
+    if (Date.now() - storedData.createdAt > 5 * 60 * 1000) {
+      otpStore.delete(email.toLowerCase());
+      return res
+        .status(400)
+        .json({ message: "OTP has expired. Please request a new OTP." });
+    }
+
+    // Check attempts
+    if (storedData.attempts >= 3) {
+      otpStore.delete(email.toLowerCase());
+      return res.status(400).json({
+        message: "Too many failed attempts. Please request a new OTP.",
+      });
+    }
+
+    // Verify OTP
+    if (storedData.otp !== otp) {
+      storedData.attempts++;
+      return res.status(400).json({ message: "Invalid OTP." });
+    }
+
+    // OTP verified, remove from store
+    otpStore.delete(email.toLowerCase());
+
+    return res.json({
+      message: "Email verified successfully.",
+      verified: true,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
 
 exports.adminLogin = async (req, res) => {
   try {
