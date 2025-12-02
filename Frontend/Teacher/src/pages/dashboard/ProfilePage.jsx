@@ -199,14 +199,7 @@ const ProfilePage = () => {
             <h2 className="text-3xl font-bold text-white">{user?.name}</h2>
             <p className="text-lg text-cyan-400">Teacher</p>
           </div>
-          <div className="mt-8  text-right">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-cyan-500/80 text-white font-semibold py-2 px-6 rounded-lg hover:bg-cyan-500 transition-colors flex items-center gap-2 ml-auto"
-            >
-              Update Profile
-            </button>
-          </div>
+          
         </div>
 
         <div className="mt-10 border-t border-gray-700 pt-8">
@@ -241,6 +234,14 @@ const ProfilePage = () => {
                 <p className="font-semibold text-white">{user?.role || 'Teacher'}</p>
               </div>
             </div>
+            <div className="mt-8  text-right">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-cyan-500/80 text-white font-semibold py-2 px-6 rounded-lg hover:bg-cyan-500 transition-colors flex items-center gap-2 ml-auto"
+            >
+              Update Profile
+            </button>
+          </div>
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { User, Mail, Hash, Edit, Save, X, Upload } from 'lucide-react';
+import { User, Mail } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user, updateProfile } = useAuth();
@@ -110,17 +110,7 @@ const ProfilePage = () => {
                   {formData.name.charAt(0)}
                 </div>
               )}
-              <>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                <button
-                  type="button"
-                  onClick={handleImageUpload}
-                  className="flex items-center gap-2 bg-cyan-500/80 text-white font-semibold py-3 px-6 rounded-lg hover:bg-cyan-500 transition-colors"
-                >
-                  <Upload className="w-5 h-5" />
-                  {uploading ? 'Uploading...' : 'Upload Picture'}
-                </button>
-              </>
+            
             </div>
           </div>
 
@@ -149,39 +139,9 @@ const ProfilePage = () => {
                 placeholder="Enter your email"
               />
             </div>
-
-            {user?.role === 'student' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Roll Number</label>
-                <input
-                  type="text"
-                  value={user?.rollNumber}
-                  disabled
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
-                />
-                <p className="text-xs text-gray-400 mt-1">Roll number cannot be changed</p>
-              </div>
-            )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 justify-end">
-            <button
-              onClick={handleCancel}
-              disabled={loading}
-              className="flex items-center gap-2 bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
-            >
-              <X className="w-4 h-4" />
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveProfile}
-              disabled={loading}
-              className="flex items-center gap-2 bg-cyan-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-cyan-600 transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Updating...' : 'Update Profile'}
-            </button>
-          </div>
+         
         </div>
       </motion.div>
     );
@@ -210,14 +170,6 @@ const ProfilePage = () => {
             <h2 className="text-3xl font-bold text-white">{user?.name}</h2>
             <p className="text-lg text-cyan-400">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}</p>
           </div>
-          <div className="mt-8  text-right">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-cyan-500/80 text-white font-semibold py-2 px-6 rounded-lg hover:bg-cyan-500 transition-colors flex items-center gap-2 ml-auto"
-            >
-              Update Profile
-            </button>
-          </div>
         </div>
 
         <div className="mt-10 border-t border-gray-700 pt-8">
@@ -243,15 +195,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-gray-700 rounded-lg">
-                <Hash className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Roll Number</p>
-                <p className="font-semibold text-white">{user?.rollNumber}</p>
-              </div>
-            </div>
           </div>
         </div>
 

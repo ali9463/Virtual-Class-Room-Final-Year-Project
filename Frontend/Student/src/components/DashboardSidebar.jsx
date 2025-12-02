@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X } from 'lucide-react';
+import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X , Videotape , TvMinimalPlay } from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -23,11 +23,11 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     { name: 'Assigments', path: '/dashboard/assignments', icon: ClipboardCheck },
     { name: 'Quizez', path: '/dashboard/quizez', icon: ClipboardCheck },
     { name: 'Marks', path: '/dashboard/marks', icon: BarChart2 },
-    { name: 'Class Timings', path: '/dashboard/marks', icon: BarChart2 },
-    { name: 'Attendence', path: '/dashboard/marks', icon: BarChart2 },
-    { name: 'Lectures', path: '/dashboard/marks', icon: BarChart2 },
-    { name: 'Recordings', path: '/dashboard/marks', icon: BarChart2 },
-    { name: 'Ai ChatBot', path: '/dashboard/marks', icon: BarChart2 },
+    { name: 'Class Timings', path: '/dashboard/classtimings', icon: TvMinimalPlay  },
+    { name: 'Attendence', path: '/dashboard/attendence', icon: BarChart2 },
+    { name: 'Lectures', path: '/dashboard/lectures', icon: BarChart2 },
+    { name: 'Recordings', path: '/dashboard/recording', icon: Videotape  },
+    { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: BarChart2 },
     { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
 

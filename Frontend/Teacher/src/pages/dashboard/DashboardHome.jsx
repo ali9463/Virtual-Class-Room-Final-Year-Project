@@ -14,9 +14,13 @@ import {
   ArrowRight,
   Users
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import ClassFilter from '../../components/ClassFilter';
 
 const DashboardHome = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [filter, setFilter] = useState({ year: '', department: '', section: '' });
 
   const [dashboardData] = useState(() => ({
     classesToday: faker.number.int({ min: 0, max: 3 }),
@@ -38,6 +42,8 @@ const DashboardHome = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <ClassFilter onFilterChange={setFilter} user={user} />
+
       <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border border-cyan-500/20 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-center sm:text-left">
           <h2 className="text-2xl font-bold mb-2">Instructor Dashboard</h2>

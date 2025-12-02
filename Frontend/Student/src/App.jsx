@@ -14,6 +14,11 @@ import MarksPage from './pages/dashboard/MarksPage';
 import ProfilePage from './pages/dashboard/ProfilePage';
 import Assignments from './pages/dashboard/Assignments';
 import Quizez from './pages/dashboard/Quizez';
+import ClassTiming from './pages/dashboard/ClassTiming';
+import Attendence from './pages/dashboard/Attendence';
+import Recordings from './pages/dashboard/Recordings';
+import AiChatBot from './pages/dashboard/AiChatBot';
+import Lectures from './pages/dashboard/Lectures';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -60,6 +65,11 @@ function App() {
               <Route path="assignments" element={<Assignments/>} />
               <Route path="quizez" element={<Quizez/>} />
               <Route path="marks" element={<MarksPage />} />
+              <Route path="classtimings" element={<ClassTiming/>} />
+              <Route path="attendence" element={<Attendence/>} />
+              <Route path="recording" element={<Recordings/>} />
+              <Route path="lectures" element={<Lectures/>} />
+              <Route path="aichatbot" element={<AiChatBot/>} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

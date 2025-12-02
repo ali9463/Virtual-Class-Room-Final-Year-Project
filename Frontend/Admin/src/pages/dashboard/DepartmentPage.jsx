@@ -204,7 +204,7 @@ const DepartmentPage = () => {
         </div>
 
         {/* Add Section */}
-        <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 p-6 rounded-xl border border-purple-500/30 h-fit">
+        <div className="bg-gradient-to-br from-cyan-500/10 to-blue-600/10 p-6 rounded-xl border border-purple-500/30 h-fit">
           <h3 className="text-lg font-bold mb-4 text-purple-300">Add New Section</h3>
           <div className="space-y-3">
             <select
@@ -226,7 +226,7 @@ const DepartmentPage = () => {
             />
             <button
               onClick={addSection}
-              className="w-full bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add Section

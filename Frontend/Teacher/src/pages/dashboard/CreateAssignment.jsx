@@ -3,8 +3,12 @@ import { motion } from 'framer-motion';
 import { Upload, Trash2, Edit2, Save, X, FileText } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
+import ClassFilter from '../../components/ClassFilter';
 
 const CreateAssignment = () => {
+    const { user } = useAuth();
+    const [filter, setFilter] = useState({ year: '', department: '', section: '' });
     const [formData, setFormData] = useState({
         title: '',
         courseName: '',
@@ -18,6 +22,8 @@ const CreateAssignment = () => {
     const [assignments, setAssignments] = useState([]);
     const [years, setYears] = useState([]);
     const [departments, setDepartments] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [teacherClasses, setTeacherClasses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [fileName, setFileName] = useState('');
@@ -25,34 +31,31 @@ const CreateAssignment = () => {
     const API = import.meta.env.VITE_API_URL || 'http://localhost:7000';
     const token = localStorage.getItem('token');
 
-    // Fetch assignments, years, and departments on mount
+    // Parse teacher's classes from user.department field
+    useEffect(() => {
+        if (user?.department) {
+            const classes = user.department.split(',').map(c => c.trim());
+            setTeacherClasses(classes);
+
+            // Extract unique years from teacher's classes
+            const uniqueYears = [...new Set(classes.map(c => c.split('-')[0]))];
+            setYears(uniqueYears.map(y => ({ code: y, _id: y })));
+        }
+    }, [user]);
+
+    // Fetch assignments on mount
     useEffect(() => {
         fetchAssignments();
-        fetchYears();
-        fetchDepartments();
     }, []);
 
-    const fetchYears = async () => {
-        try {
-            const res = await axios.get(`${API}/api/admin/years`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setYears(res.data || []);
-        } catch (err) {
-            console.error('Error fetching years:', err);
+    // Fetch sections when department changes
+    useEffect(() => {
+        if (formData.department) {
+            fetchSections(formData.department);
+        } else {
+            setSections([]);
         }
-    };
-
-    const fetchDepartments = async () => {
-        try {
-            const res = await axios.get(`${API}/api/admin/departments`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setDepartments(res.data || []);
-        } catch (err) {
-            console.error('Error fetching departments:', err);
-        }
-    };
+    }, [formData.department]);
 
     const fetchAssignments = async () => {
         try {
@@ -63,6 +66,36 @@ const CreateAssignment = () => {
         } catch (err) {
             console.error('Error fetching assignments:', err);
             toast.error('Failed to fetch assignments');
+        }
+    };
+
+    // Update departments based on selected year
+    useEffect(() => {
+        if (formData.year && teacherClasses.length > 0) {
+            const deptsForYear = [...new Set(
+                teacherClasses
+                    .filter(c => c.split('-')[0] === formData.year)
+                    .map(c => c.split('-')[1])
+            )];
+            setDepartments(deptsForYear.map(d => ({ code: d, _id: d })));
+            setFormData(prev => ({ ...prev, department: '', section: '' }));
+        }
+    }, [formData.year, teacherClasses]);
+
+    const fetchSections = async (departmentCode) => {
+        try {
+            // Get sections from teacher's selected classes for this department
+            const sectionsForDept = [...new Set(
+                teacherClasses
+                    .filter(c => {
+                        const parts = c.split('-');
+                        return parts[0] === formData.year && parts[1] === departmentCode;
+                    })
+                    .map(c => c.split('-')[2])
+            )];
+            setSections(sectionsForDept.map(s => ({ code: s, _id: s })));
+        } catch (err) {
+            console.error('Error processing sections:', err);
         }
     };
 
@@ -194,6 +227,9 @@ const CreateAssignment = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <h1 className="text-3xl font-bold mb-6 text-white">Manage Assignments</h1>
 
+            {/* Class Filter */}
+            <ClassFilter onFilterChange={setFilter} user={user} />
+
             {/* Create/Edit Form */}
             <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20 mb-8">
                 <h2 className="text-xl font-bold mb-4 text-white">
@@ -266,15 +302,15 @@ const CreateAssignment = () => {
                                 name="section"
                                 value={formData.section}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-cyan-500 focus:outline-none"
+                                disabled={!formData.department}
+                                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:border-cyan-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <option value="">Select Section</option>
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                                <option value="E">E</option>
-                                <option value="F">F</option>
+                                {sections.map(section => (
+                                    <option key={section._id} value={section.code}>
+                                        {section.code}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 

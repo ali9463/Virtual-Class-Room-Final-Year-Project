@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X } from 'lucide-react';
+import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X , ShieldUser, Book , Bot } from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -21,13 +21,13 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: Home },
     { name: 'Quizez', path: '/dashboard/quizez', icon: ClipboardCheck },
-    { name: 'Assignments', path: '/dashboard/assignments', icon: ClipboardCheck },
-    { name: 'Attendence', path: '/dashboard/assignments', icon: ClipboardCheck },
-    { name: 'Lectures', path: '/dashboard/assignments', icon: ClipboardCheck },
-    { name: 'Ai ChatBot', path: '/dashboard/assignments', icon: ClipboardCheck },
-    { name: 'Classes', path: '/dashboard/assignments', icon: ClipboardCheck },
-    { name: 'Assignment Checker', path: '/dashboard/assignments', icon: ClipboardCheck },
-    { name: 'Quiz Checker', path: '/dashboard/assignments', icon: ClipboardCheck },
+    { name: 'Assignments', path: '/dashboard/assignments', icon: Book  },
+    { name: 'Attendence', path: '/dashboard/attendence', icon: ShieldUser },
+    { name: 'Lectures', path: '/dashboard/lectures', icon: ClipboardCheck },
+    { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: Bot  },
+    { name: 'Classes', path: '/dashboard/classes', icon: ClipboardCheck },
+    { name: 'Assignment Checker', path: '/dashboard/checkassignments', icon: ClipboardCheck },
+    { name: 'Quiz Checker', path: '/dashboard/checkquizes', icon: ClipboardCheck },
     { name: 'Marks', path: '/dashboard/marks', icon: BarChart2 },
     { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
