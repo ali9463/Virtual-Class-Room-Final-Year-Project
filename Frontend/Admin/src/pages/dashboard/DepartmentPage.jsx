@@ -91,7 +91,12 @@ const DepartmentPage = () => {
     try {
       await axios.delete(`${API}/api/admin/departments/${id}`);
       setDepts(prev => prev.filter(d => d._id !== id));
-      setSections(prev => prev.filter(s => s.departmentId._id !== id));
+      setSections(prev => prev.filter(s => {
+        if (!s || !s.departmentId) return true;
+        // Handle both cases: departmentId can be a string ID or an object with _id
+        const sectionDeptId = typeof s.departmentId === 'object' ? s.departmentId._id : s.departmentId;
+        return sectionDeptId !== id;
+      }));
       toast.success('Department deleted');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete department');
@@ -223,9 +228,14 @@ const DepartmentPage = () => {
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:border-purple-500 outline-none"
             >
               <option value="">Select Department</option>
-              {(depts || []).map(d => (
-                <option key={d._id} value={d._id}>{d?.code} ({d?.yearId?.code || 'N/A'})</option>
-              ))}
+              {(depts || []).map(d => {
+                if (!d || !d._id) return null;
+                // Handle both cases: yearId can be a string ID or an object with code
+                const yearCode = typeof d.yearId === 'object' ? d.yearId?.code : 'N/A';
+                return (
+                  <option key={d._id} value={d._id}>{d?.code} ({yearCode})</option>
+                );
+              })}
             </select>
             <input
               value={newSection.code}
