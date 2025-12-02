@@ -128,12 +128,22 @@ const DepartmentPage = () => {
 
   // Get departments for a specific year
   const getDeptsForYear = (yearId) => {
-    return depts.filter(d => d.yearId._id === yearId);
+    return depts.filter(d => {
+      if (!d || !d.yearId) return false;
+      // Handle both cases: yearId can be a string ID or an object with _id
+      const deptYearId = typeof d.yearId === 'object' ? d.yearId._id : d.yearId;
+      return deptYearId === yearId;
+    });
   };
 
   // Get sections for a specific department
   const getSectionsForDept = (deptId) => {
-    return sections.filter(s => s.departmentId._id === deptId);
+    return sections.filter(s => {
+      if (!s || !s.departmentId) return false;
+      // Handle both cases: departmentId can be a string ID or an object with _id
+      const sectionDeptId = typeof s.departmentId === 'object' ? s.departmentId._id : s.departmentId;
+      return sectionDeptId === deptId;
+    });
   };
 
   return (
