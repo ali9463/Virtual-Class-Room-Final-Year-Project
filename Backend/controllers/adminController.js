@@ -69,8 +69,14 @@ exports.deleteYear = async (req, res) => {
 exports.getDepartments = async (req, res) => {
   try {
     const depts = await Department.find()
-      .populate("yearId")
-      .populate("sections")
+      .populate({
+        path: "yearId",
+        select: "_id code label",
+      })
+      .populate({
+        path: "sections",
+        select: "_id code",
+      })
       .sort({ code: 1 });
     res.json(depts);
   } catch (err) {
@@ -228,7 +234,14 @@ exports.deleteUser = async (req, res) => {
 exports.getSections = async (req, res) => {
   try {
     const sections = await Section.find()
-      .populate("departmentId")
+      .populate({
+        path: "departmentId",
+        select: "_id code label",
+        populate: {
+          path: "yearId",
+          select: "_id code label",
+        },
+      })
       .sort({ code: 1 });
     res.json(sections);
   } catch (err) {
