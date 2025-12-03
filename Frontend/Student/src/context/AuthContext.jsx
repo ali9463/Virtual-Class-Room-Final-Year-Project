@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API = import.meta.env.VITE_API_URL || 'https://fyp-backend-henna.vercel.app';
 
   const login = async (identifier, password) => {
     try {
