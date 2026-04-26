@@ -15,8 +15,8 @@ const otpStore = new Map();
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER || "chali.94063@gmail.com",
-    pass: process.env.EMAIL_PASSWORD || "ugmh shxj kskt ldnh",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
 
@@ -54,6 +54,13 @@ exports.checkEmail = async (req, res) => {
 exports.sendOTP = async (req, res) => {
   try {
     const { email, userType = "Student" } = req.body;
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      return res.status(500).json({
+        message:
+          "Email service is not configured. Please set EMAIL_USER and EMAIL_PASSWORD.",
+      });
+    }
 
     if (!email) {
       return res.status(400).json({ message: "Email is required." });
@@ -117,10 +124,9 @@ exports.sendOTP = async (req, res) => {
       });
     } catch (emailError) {
       console.error("Email sending error:", emailError);
-      // Still return success but log the error for debugging
-      return res.json({
+      return res.status(500).json({
         message:
-          "OTP generated successfully. (Email sending may have failed - check your spam folder)",
+          "Failed to send OTP email. Please verify email configuration and try again.",
       });
     }
   } catch (err) {

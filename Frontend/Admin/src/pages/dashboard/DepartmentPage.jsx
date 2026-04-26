@@ -151,6 +151,18 @@ const DepartmentPage = () => {
     });
   };
 
+  // Resolve year code for department when yearId is either populated object or plain id
+  const getDeptYearCode = (dept) => {
+    if (!dept || !dept.yearId) return 'N/A';
+
+    if (typeof dept.yearId === 'object') {
+      return dept.yearId.code || 'N/A';
+    }
+
+    const matchedYear = years.find(y => y && y._id === dept.yearId);
+    return matchedYear?.code || 'N/A';
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <h1 className="text-3xl font-bold mb-6 text-white">Academic Structure Management</h1>
@@ -230,8 +242,7 @@ const DepartmentPage = () => {
               <option value="">Select Department</option>
               {(depts || []).map(d => {
                 if (!d || !d._id) return null;
-                // Handle both cases: yearId can be a string ID or an object with code
-                const yearCode = typeof d.yearId === 'object' ? d.yearId?.code : 'N/A';
+                const yearCode = getDeptYearCode(d);
                 return (
                   <option key={d._id} value={d._id}>{d?.code} ({yearCode})</option>
                 );
