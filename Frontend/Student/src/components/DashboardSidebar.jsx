@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X , Videotape , TvMinimalPlay } from 'lucide-react';
+import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X, Videotape, TvMinimalPlay } from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -11,9 +11,9 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     logout();
     navigate('/');
   };
-  
+
   const handleLinkClick = () => {
-    if(isSidebarOpen) {
+    if (isSidebarOpen) {
       setIsSidebarOpen(false);
     }
   }
@@ -23,10 +23,10 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     { name: 'Assigments', path: '/dashboard/assignments', icon: ClipboardCheck },
     { name: 'Quizez', path: '/dashboard/quizez', icon: ClipboardCheck },
     { name: 'Marks', path: '/dashboard/marks', icon: BarChart2 },
-    { name: 'Class Timings', path: '/dashboard/classtimings', icon: TvMinimalPlay  },
+    { name: 'Class Meetings', path: '/dashboard/classtimings', icon: TvMinimalPlay },
     { name: 'Attendence', path: '/dashboard/attendence', icon: BarChart2 },
     { name: 'Lectures', path: '/dashboard/lectures', icon: BarChart2 },
-    { name: 'Recordings', path: '/dashboard/recording', icon: Videotape  },
+    { name: 'Recordings', path: '/dashboard/recording', icon: Videotape },
     { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: BarChart2 },
     { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
@@ -52,10 +52,9 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   end={item.path === '/dashboard'}
                   onClick={handleLinkClick}
                   className={({ isActive }) =>
-                    `flex items-center p-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-cyan-500/20 text-cyan-300'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    `flex items-center p-3 rounded-lg transition-colors ${isActive
+                      ? 'bg-cyan-500/20 text-cyan-300'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     }`
                   }
                 >

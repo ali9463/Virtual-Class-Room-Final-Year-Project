@@ -24,6 +24,7 @@ const auth = async (req, res, next) => {
         req.user.name = user.name;
         req.user.rollYear = user.rollYear || null;
         req.user.rollDept = user.rollDept || null;
+        req.user.department = user.department || null;
       }
     }
 

@@ -15,10 +15,12 @@ import CreateAssigment from './pages/dashboard/CreateAssignment';
 import CreateQuiz from './pages/dashboard/CreateQuiz';
 import AssignmentChecker from './pages/dashboard/AssignmentChecker';
 import QuizChecker from './pages/dashboard/QuizChecker';
+import AttendancePage from './pages/dashboard/AttendancePage';
 import Attendence from './pages/dashboard/Attendence';
 import Lectures from './pages/dashboard/Lectures';
 import AiChatBot from './pages/dashboard/AiChatBot';
 import Classes from './pages/dashboard/Classes';
+import Meetings from './pages/dashboard/Meetings';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -51,7 +53,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/choose-classes" element={<ChooseClasses />} />
+            <Route path="/chooseclasses" element={<ChooseClasses />} />
 
             <Route
               path="/dashboard"
@@ -62,15 +64,16 @@ function App() {
               }
             >
               <Route index element={<DashboardHome />} />
-              <Route path="quizez" element={<CreateQuiz />} />
-              <Route path="assignments" element={<CreateAssigment />} />
+              <Route path="marks" element={<MarksPage />} />
               <Route path="checkassignments" element={<AssignmentChecker />} />
               <Route path="checkquizes" element={<QuizChecker />} />
-              <Route path="attendence" element={<Attendence />} />
+              <Route path="attendance" element={<AttendancePage />} />
               <Route path="lectures" element={<Lectures />} />
               <Route path="aichatbot" element={<AiChatBot />} />
               <Route path="classes" element={<Classes />} />
-              <Route path="marks" element={<MarksPage />} />
+              <Route path="meetings" element={<Meetings />} />
+              <Route path="createassignment" element={<CreateAssigment />} />
+              <Route path="createquiz" element={<CreateQuiz />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

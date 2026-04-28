@@ -11,6 +11,7 @@ import MarksPage from './pages/dashboard/MarksPage';
 import ProfilePage from './pages/dashboard/ProfilePage';
 import ManageStudents from './pages/ManageStudents';
 import ManageTeachers from './pages/ManageTeachers';
+import MeetingsAdmin from './pages/dashboard/MeetingsAdmin';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -42,7 +43,7 @@ function App() {
         <div className="min-h-screen bg-black">
           <Routes>
             <Route path="/" element={<LoginPage />} />
-            
+
 
             <Route
               path="/dashboard"
@@ -56,6 +57,7 @@ function App() {
               <Route path="departments" element={<DepartmentPage />} />
               <Route path="teachers" element={<ManageTeachers />} />
               <Route path="students" element={<ManageStudents />} />
+              <Route path="meetings" element={<MeetingsAdmin />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

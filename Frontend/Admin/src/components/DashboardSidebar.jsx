@@ -11,9 +11,9 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     logout();
     navigate('/');
   };
-  
+
   const handleLinkClick = () => {
-    if(isSidebarOpen) {
+    if (isSidebarOpen) {
       setIsSidebarOpen(false);
     }
   }
@@ -23,6 +23,7 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     { name: 'Departments', path: '/dashboard/departments', icon: ClipboardCheck },
     { name: 'Teachers', path: '/dashboard/teachers', icon: BarChart2 },
     { name: 'Students', path: '/dashboard/students', icon: BarChart2 },
+    { name: 'Meetings', path: '/dashboard/meetings', icon: ClipboardCheck },
     { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
 
@@ -47,10 +48,9 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   end={item.path === '/dashboard'}
                   onClick={handleLinkClick}
                   className={({ isActive }) =>
-                    `flex items-center p-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-cyan-500/20 text-cyan-300'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    `flex items-center p-3 rounded-lg transition-colors ${isActive
+                      ? 'bg-cyan-500/20 text-cyan-300'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     }`
                   }
                 >

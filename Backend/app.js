@@ -68,8 +68,19 @@ app.use("/api/student-assignments", studentAssignmentRoutes);
 const studentQuizRoutes = require("./routes/studentQuizzes");
 app.use("/api/student-quizzes", studentQuizRoutes);
 
+// meeting routes
+const meetingRoutes = require("./routes/meeting");
+app.use("/api/meetings", meetingRoutes);
+
+// attendance routes
+const attendanceRoutes = require("./routes/attendance");
+app.use("/api/attendance", attendanceRoutes);
+
+const courseRoutes = require("./routes/courses");
+app.use("/api/courses", courseRoutes);
+
 app.get("/", (req, res) =>
-  res.send("Hello, Online Virtual Class Room Backend!")
+  res.send("Hello, Online Virtual Class Room Backend!"),
 );
 
 // basic error handler

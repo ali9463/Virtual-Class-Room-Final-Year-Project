@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X , ShieldUser, Book , Bot } from 'lucide-react';
+import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X, ShieldUser, Book, Bot } from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -11,9 +11,9 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     logout();
     navigate('/');
   };
-  
+
   const handleLinkClick = () => {
-    if(isSidebarOpen) {
+    if (isSidebarOpen) {
       setIsSidebarOpen(false);
     }
   }
@@ -21,11 +21,12 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: Home },
     { name: 'Quizez', path: '/dashboard/quizez', icon: ClipboardCheck },
-    { name: 'Assignments', path: '/dashboard/assignments', icon: Book  },
-    { name: 'Attendence', path: '/dashboard/attendence', icon: ShieldUser },
+    { name: 'Assignments', path: '/dashboard/assignments', icon: Book },
+    { name: 'Attendance', path: '/dashboard/attendance', icon: ShieldUser },
     { name: 'Lectures', path: '/dashboard/lectures', icon: ClipboardCheck },
-    { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: Bot  },
+    { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: Bot },
     { name: 'Classes', path: '/dashboard/classes', icon: ClipboardCheck },
+    { name: 'Meetings', path: '/dashboard/meetings', icon: ClipboardCheck },
     { name: 'Assignment Checker', path: '/dashboard/checkassignments', icon: ClipboardCheck },
     { name: 'Quiz Checker', path: '/dashboard/checkquizes', icon: ClipboardCheck },
     { name: 'Marks', path: '/dashboard/marks', icon: BarChart2 },
@@ -53,10 +54,9 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   end={item.path === '/dashboard'}
                   onClick={handleLinkClick}
                   className={({ isActive }) =>
-                    `flex items-center p-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-cyan-500/20 text-cyan-300'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    `flex items-center p-3 rounded-lg transition-colors ${isActive
+                      ? 'bg-cyan-500/20 text-cyan-300'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     }`
                   }
                 >
