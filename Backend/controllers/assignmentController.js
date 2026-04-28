@@ -87,6 +87,22 @@ exports.createAssignment = async (req, res) => {
             message: "Assignment created successfully.",
             assignment,
           });
+
+          // Send notification to class (non-blocking)
+          try {
+            const notificationService = require("../utils/notificationService");
+            const targetClass = `${assignment.year}-${assignment.department}-${assignment.section}`;
+            notificationService
+              .sendNotificationToClass(targetClass, {
+                title: `New Assignment: ${assignment.title}`,
+                body: `A new assignment has been posted for ${assignment.courseName}. Due: ${assignment.dueDate}`,
+                type: "assignment",
+                link: `/dashboard/assignments`,
+              })
+              .catch((err) => console.error("notify error", err));
+          } catch (e) {
+            console.error("notification send failed", e);
+          }
         } catch (err) {
           console.error(err);
           res.status(500).json({ message: "Failed to create assignment." });
@@ -100,6 +116,22 @@ exports.createAssignment = async (req, res) => {
         message: "Assignment created successfully.",
         assignment,
       });
+
+      // notify class
+      try {
+        const notificationService = require("../utils/notificationService");
+        const targetClass = `${assignment.year}-${assignment.department}-${assignment.section}`;
+        notificationService
+          .sendNotificationToClass(targetClass, {
+            title: `New Assignment: ${assignment.title}`,
+            body: `A new assignment has been posted for ${assignment.courseName}. Due: ${assignment.dueDate}`,
+            type: "assignment",
+            link: `/dashboard/assignments`,
+          })
+          .catch((err) => console.error("notify error", err));
+      } catch (e) {
+        console.error("notification send failed", e);
+      }
     }
   } catch (err) {
     console.error(err);

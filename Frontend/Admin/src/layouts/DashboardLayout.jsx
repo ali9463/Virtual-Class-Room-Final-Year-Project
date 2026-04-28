@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import DashboardSidebar from '../components/DashboardSidebar';
 import { useAuth } from '../context/AuthContext';
-import { Bell, Settings, Menu } from 'lucide-react';
+import { Bell, Settings, Menu,  } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const DashboardLayout = () => {
@@ -27,12 +27,8 @@ const DashboardLayout = () => {
                 <h1 className="text-xl font-bold hidden sm:block">Welcome, {user?.name.split(' ')[0]}!</h1>
               </div>
               <div className="flex items-center space-x-2 sm:space-x-4">
-                <button className="p-2 hover:bg-gray-700 rounded-full transition-colors">
-                  <Bell className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-gray-700 rounded-full transition-colors">
-                  <Settings className="w-5 h-5" />
-                </button>
+               
+              
                 <button onClick={() => navigate('/dashboard/profile')} title="View profile" className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold hover:scale-105 transition-transform">
                   {user?.name.charAt(0)}
                 </button>

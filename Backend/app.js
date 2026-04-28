@@ -87,6 +87,10 @@ app.use("/api/lectures", lectureRoutes);
 const aiRoutes = require("./routes/ai");
 app.use("/api/ai", aiRoutes);
 
+// notifications (FCM)
+const notificationRoutes = require("./routes/notifications");
+app.use("/api/notifications", notificationRoutes);
+
 app.get("/", (req, res) =>
   res.send("Hello, Online Virtual Class Room Backend!"),
 );

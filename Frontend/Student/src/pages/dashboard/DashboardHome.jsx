@@ -15,10 +15,13 @@ import {
   Loader
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import Notifications from '../../components/Notifications';
+import useNotifications from '../../hooks/useNotifications';
 
 const DashboardHome = () => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
+  useNotifications(user);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -151,13 +154,19 @@ const DashboardHome = () => {
           <h2 className="text-2xl font-bold mb-2">Ready for your next class?</h2>
           <p className="text-gray-300">Your live virtual classroom is just one click away.</p>
         </div>
-        <button
-          onClick={() => navigate('/classroom')}
-          className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 rounded-lg font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all transform hover:scale-105 text-white flex items-center gap-2 w-full sm:w-auto justify-center"
-        >
-          Join Class
-          <Video className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/classroom')}
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 rounded-lg font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all transform hover:scale-105 text-white flex items-center gap-2 w-full sm:w-auto justify-center"
+          >
+            Join Class
+            <Video className="w-5 h-5" />
+          </button>
+          <div className="hidden sm:block">
+            {/* Notifications dropdown */}
+            <Notifications />
+          </div>
+        </div>
       </div>
 
       {error && (

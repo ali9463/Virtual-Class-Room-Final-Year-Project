@@ -16,6 +16,7 @@
     "dev": "node index.js"
   },
   "dependencies": {
+    "@google/genai": "^1.50.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
