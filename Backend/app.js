@@ -79,6 +79,14 @@ app.use("/api/attendance", attendanceRoutes);
 const courseRoutes = require("./routes/courses");
 app.use("/api/courses", courseRoutes);
 
+// lecture routes
+const lectureRoutes = require("./routes/lectures");
+app.use("/api/lectures", lectureRoutes);
+
+// AI routes (chatbot)
+const aiRoutes = require("./routes/ai");
+app.use("/api/ai", aiRoutes);
+
 app.get("/", (req, res) =>
   res.send("Hello, Online Virtual Class Room Backend!"),
 );

@@ -4,6 +4,7 @@ const assignmentSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     courseName: { type: String, required: true },
+    marks: { type: Number, default: null },
     year: { type: String, default: null },
     department: { type: String, default: null },
     section: {
@@ -22,7 +23,7 @@ const assignmentSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Assignment", assignmentSchema);

@@ -26,18 +26,28 @@ router.get("/", auth, studentAssignmentController.getAssignmentsForStudent);
 router.get(
   "/:assignmentId/submission-status",
   auth,
-  studentAssignmentController.getSubmissionStatus
+  studentAssignmentController.getSubmissionStatus,
 );
 router.post(
   "/submit",
   auth,
   upload.single("file"),
-  studentAssignmentController.submitAssignment
+  studentAssignmentController.submitAssignment,
 );
 router.get(
   "/:assignmentId/submissions",
   auth,
-  studentAssignmentController.getSubmissionsForAssignment
+  studentAssignmentController.getSubmissionsForAssignment,
+);
+router.get(
+  "/class/submissions/all",
+  auth,
+  studentAssignmentController.getSubmissionsByClass,
+);
+router.put(
+  "/:submissionId/marks",
+  auth,
+  studentAssignmentController.updateMarks,
 );
 
 module.exports = router;

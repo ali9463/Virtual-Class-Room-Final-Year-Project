@@ -20,7 +20,7 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: Home },
-    { name: 'Quizez', path: '/dashboard/quizez', icon: ClipboardCheck },
+    { name: 'Quizzes', path: '/dashboard/quizzes', icon: ClipboardCheck },
     { name: 'Assignments', path: '/dashboard/assignments', icon: Book },
     { name: 'Attendance', path: '/dashboard/attendance', icon: ShieldUser },
     { name: 'Lectures', path: '/dashboard/lectures', icon: ClipboardCheck },

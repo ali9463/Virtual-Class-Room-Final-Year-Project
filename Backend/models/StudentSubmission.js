@@ -21,8 +21,10 @@ const studentSubmissionSchema = new mongoose.Schema(
       default: "pending",
     },
     submittedAt: { type: Date, default: null },
+    marks: { type: Number, default: null },
+    feedback: { type: String, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("StudentSubmission", studentSubmissionSchema);

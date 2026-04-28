@@ -1,20 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { faker } from '@faker-js/faker';
-import { Award, TrendingUp, TrendingDown } from 'lucide-react';
+import axios from 'axios';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ClassFilter from '../../components/ClassFilter';
-
-const generateGrades = (count) => {
-  return Array.from({ length: count }, () => ({
-    id: faker.string.uuid(),
-    student: faker.person.fullName(),
-    subject: faker.company.name(),
-    assignment: `${faker.word.verb()} ${faker.word.noun()}`,
-    grade: Number(faker.number.float({ min: 55, max: 100, fractionDigits: 1 }).toFixed(1)),
-    date: faker.date.recent({ days: 90 }).toLocaleDateString(),
-  }));
-};
 
 const GradeColor = ({ grade }) => {
   let colorClass = '';
@@ -26,22 +15,106 @@ const GradeColor = ({ grade }) => {
 };
 
 const MarksPage = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [filter, setFilter] = useState({ year: '', department: '', section: '' });
-  const [grades, setGrades] = useState(generateGrades(15));
-  const overallAverage = (grades.reduce((acc, g) => acc + g.grade, 0) / grades.length).toFixed(1);
+  const [entries, setEntries] = useState([]); // combined assignment + quiz submissions
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [editing, setEditing] = useState(null); // submissionId being edited
+  const [editValue, setEditValue] = useState('');
 
-  const handleEditGrade = (id) => {
-    const current = grades.find(g => g.id === id);
-    const input = window.prompt(`Enter new grade for ${current.student} (0-100):`, String(current.grade));
-    if (input === null) return;
-    const value = parseFloat(input);
-    if (Number.isNaN(value) || value < 0 || value > 100) {
-      alert('Invalid grade');
-      return;
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:7000';
+
+  const numericMarks = entries.filter(e => typeof e.marks === 'number').map(e => Number(e.marks));
+  const overallAverage = numericMarks.length ? (numericMarks.reduce((acc, v) => acc + v, 0) / numericMarks.length).toFixed(1) : '0.0';
+
+  useEffect(() => {
+    if (!token) return;
+    if (filter.year && filter.department && filter.section) {
+      fetchClassEntries();
+    } else {
+      setEntries([]);
     }
-    setGrades(prev => prev.map(g => g.id === id ? { ...g, grade: Number(value.toFixed(1)) } : g));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, token]);
+
+  const fetchClassEntries = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const headers = { headers: { Authorization: `Bearer ${token}` } };
+
+      const [assignRes, quizRes] = await Promise.all([
+        axios.get(`${API}/api/student-assignments/class/submissions/all?year=${encodeURIComponent(filter.year)}&department=${encodeURIComponent(filter.department)}&section=${encodeURIComponent(filter.section)}`, headers).then(r => r.data),
+        axios.get(`${API}/api/student-quizzes/class/submissions/all?year=${encodeURIComponent(filter.year)}&department=${encodeURIComponent(filter.department)}&section=${encodeURIComponent(filter.section)}`, headers).then(r => r.data),
+      ]);
+
+      // Normalize entries
+      const normalizedAssign = (assignRes || []).map(a => ({
+        _id: a._id,
+        studentName: a.studentName,
+        studentId: a.studentId,
+        title: a.assignmentTitle,
+        type: 'assignment',
+        submittedAt: a.submittedAt,
+        marks: a.marks,
+        submissionId: a._id,
+      }));
+
+      const normalizedQuiz = (quizRes || []).map(q => ({
+        _id: q._id,
+        studentName: q.studentName,
+        studentId: q.studentId,
+        title: q.quizTitle,
+        type: 'quiz',
+        submittedAt: q.submittedAt,
+        marks: q.marks,
+        submissionId: q._id,
+      }));
+
+      const combined = [...normalizedAssign, ...normalizedQuiz].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+      setEntries(combined);
+    } catch (err) {
+      console.error('Failed to load class submissions', err);
+      setError('Failed to load submissions for selected class');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const startEdit = (submissionId, currentMarks) => {
+    setEditing(submissionId);
+    setEditValue(currentMarks !== null && currentMarks !== undefined ? String(currentMarks) : '');
+  };
+
+  const cancelEdit = () => {
+    setEditing(null);
+    setEditValue('');
+  };
+
+  const saveMarks = async (entry) => {
+    try {
+      const val = editValue === '' ? null : Number(editValue);
+      if (val !== null && (Number.isNaN(val) || val < 0)) {
+        alert('Enter a valid non-negative number for marks');
+        return;
+      }
+      const headers = { headers: { Authorization: `Bearer ${token}` } };
+      if (entry.type === 'assignment') {
+        const res = await axios.put(`${API}/api/student-assignments/${entry.submissionId}/marks`, { marks: val }, headers).then(r => r.data);
+        setEntries(prev => prev.map(e => e.submissionId === entry.submissionId ? { ...e, marks: res.marks } : e));
+      } else {
+        const res = await axios.put(`${API}/api/student-quizzes/${entry.submissionId}/marks`, { marks: val }, headers).then(r => r.data);
+        setEntries(prev => prev.map(e => e.submissionId === entry.submissionId ? { ...e, marks: res.marks } : e));
+      }
+      cancelEdit();
+    } catch (err) {
+      console.error('Failed to save marks', err);
+      alert('Failed to save marks');
+    }
+  };
+
+
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
@@ -57,12 +130,12 @@ const MarksPage = () => {
         </div>
         <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
           <h3 className="text-gray-400 mb-2">Highest Grade</h3>
-          <p className="text-4xl font-bold text-green-400">{Math.max(...grades.map(g => g.grade)).toFixed(1)}%</p>
+          <p className="text-4xl font-bold text-green-400">{numericMarks.length ? Math.max(...numericMarks).toFixed(1) : 'N/A'}</p>
           <p className="text-sm text-gray-400 mt-1 flex items-center"><TrendingUp className="w-4 h-4 mr-1" /> Top Performance</p>
         </div>
         <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
           <h3 className="text-gray-400 mb-2">Lowest Grade</h3>
-          <p className="text-4xl font-bold text-red-400">{Math.min(...grades.map(g => g.grade)).toFixed(1)}%</p>
+          <p className="text-4xl font-bold text-red-400">{numericMarks.length ? Math.min(...numericMarks).toFixed(1) : 'N/A'}</p>
           <p className="text-sm text-gray-400 mt-1 flex items-center"><TrendingDown className="w-4 h-4 mr-1" /> Area for Improvement</p>
         </div>
       </div>
@@ -82,15 +155,27 @@ const MarksPage = () => {
               </tr>
             </thead>
             <tbody>
-              {grades.sort((a, b) => new Date(b.date) - new Date(a.date)).map((grade) => (
-                <tr key={grade.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
-                  <td className="py-4 px-4 text-cyan-400 font-medium">{grade.student}</td>
-                  <td className="py-4 px-4 text-cyan-300">{grade.subject}</td>
-                  <td className="py-4 px-4">{grade.assignment}</td>
-                  <td className="py-4 px-4 text-gray-400">{grade.date}</td>
-                  <td className="py-4 px-4 text-right"><GradeColor grade={grade.grade} /></td>
+              {entries.map((entry) => (
+                <tr key={entry.submissionId} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                  <td className="py-4 px-4 text-cyan-400 font-medium">{entry.studentName}</td>
+                  <td className="py-4 px-4 text-cyan-300">{entry.type === 'assignment' ? 'Assignment' : 'Quiz'}</td>
+                  <td className="py-4 px-4">{entry.title}</td>
+                  <td className="py-4 px-4 text-gray-400">{entry.submittedAt ? new Date(entry.submittedAt).toLocaleString() : '-'}</td>
                   <td className="py-4 px-4 text-right">
-                    <button onClick={() => handleEditGrade(grade.id)} className="text-sm bg-cyan-500/80 px-3 py-1 rounded text-white">Edit</button>
+                    {editing === entry.submissionId ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <input type="number" min="0" value={editValue} onChange={(e) => setEditValue(e.target.value)} className="w-20 px-2 py-1 rounded bg-gray-800 border border-gray-600 text-white" />
+                        <button onClick={() => saveMarks(entry)} className="text-sm bg-green-600 px-3 py-1 rounded text-white">Save</button>
+                        <button onClick={cancelEdit} className="text-sm bg-gray-700 px-3 py-1 rounded text-white">Cancel</button>
+                      </div>
+                    ) : (
+                      <span className="font-semibold">{entry.marks !== null && entry.marks !== undefined ? `${entry.marks}` : 'N/A'}</span>
+                    )}
+                  </td>
+                  <td className="py-4 px-4 text-right">
+                    {editing === entry.submissionId ? null : (
+                      <button onClick={() => startEdit(entry.submissionId, entry.marks)} className="text-sm bg-cyan-500/80 px-3 py-1 rounded text-white">Edit</button>
+                    )}
                   </td>
                 </tr>
               ))}

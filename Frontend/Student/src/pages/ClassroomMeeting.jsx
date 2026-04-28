@@ -80,6 +80,12 @@ const ClassroomMeeting = () => {
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-400 hidden sm:inline">{participants.length + 1} participants</span>
           <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><Users className="w-5 h-5" /></button>
+          <button onClick={() => {
+            // open Excalidraw collaborative room using class identifier if available
+            const room = user?.rollYear && user?.rollDept && user?.section ? `${user.rollYear}-${user.rollDept}-${user.section}` : `room-${Date.now()}`;
+            const url = `https://excalidraw.com/#room=${encodeURIComponent(room)}`;
+            window.open(url, '_blank');
+          }} className="ml-2 p-2 bg-gray-700 rounded hover:bg-gray-600">Whiteboard</button>
         </div>
       </div>
 
@@ -119,7 +125,7 @@ const ClassroomMeeting = () => {
           <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="fixed inset-0 lg:inset-y-0 lg:right-0 lg:w-96 bg-gray-800 border-l border-gray-700 flex flex-col z-50">
             <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <h2 className="text-lg font-semibold">Chat</h2>
-              <button onClick={() => setShowChat(false)} className="p-1 hover:bg-gray-700 rounded"><X/></button>
+              <button onClick={() => setShowChat(false)} className="p-1 hover:bg-gray-700 rounded"><X /></button>
             </div>
             <div className="flex space-x-1 bg-gray-700 rounded-lg p-1 mx-4">
               <button onClick={() => setActiveTab('students')} className={`flex-1 py-2 px-3 rounded-md text-sm ${activeTab === 'students' ? 'bg-cyan-500' : ''}`}>Students</button>

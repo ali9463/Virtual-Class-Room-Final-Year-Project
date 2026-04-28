@@ -134,8 +134,8 @@ const Assignments = () => {
                     </div>
                     <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${isSubmitted
-                                ? 'bg-green-500/20 text-green-300'
-                                : 'bg-yellow-500/20 text-yellow-300'
+                            ? 'bg-green-500/20 text-green-300'
+                            : 'bg-yellow-500/20 text-yellow-300'
                             }`}
                     >
                         {isSubmitted ? 'Submitted' : 'Pending'}
@@ -229,7 +229,16 @@ const Assignments = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-            <h1 className="text-3xl font-bold mb-6 text-white">Assignments</h1>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold text-white">Assignments</h1>
+                <button
+                    onClick={fetchAssignments}
+                    disabled={loading}
+                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    {loading ? 'Refreshing...' : 'Refresh'}
+                </button>
+            </div>
 
             {assignments.length === 0 ? (
                 <div className="text-center py-12">

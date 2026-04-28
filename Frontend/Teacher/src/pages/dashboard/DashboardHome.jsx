@@ -1,35 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { faker } from '@faker-js/faker';
-import {
-  GraduationCap,
-  Video,
-  FileText,
-  ClipboardCheck,
-  Calendar,
-  BookOpen,
-  PlayCircle,
-  Award,
-  ArrowRight,
-  Users
-} from 'lucide-react';
+import { Video, FileText, ClipboardCheck, Calendar, BookOpen, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ClassFilter from '../../components/ClassFilter';
 
 const DashboardHome = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [filter, setFilter] = useState({ year: '', department: '', section: '' });
+  const [dashboardData, setDashboardData] = useState({
+    classesToday: 0,
+    scheduledClasses: 0,
+    students: 0,
+    pendingGrading: 0,
+    materials: 0,
+    assignmentsCreated: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [dashboardData] = useState(() => ({
-    classesToday: faker.number.int({ min: 0, max: 3 }),
-    scheduledClasses: faker.number.int({ min: 1, max: 10 }),
-    students: faker.number.int({ min: 20, max: 120 }),
-    pendingGrading: faker.number.int({ min: 0, max: 30 }),
-    materials: faker.number.int({ min: 5, max: 40 }),
-    assignmentsCreated: faker.number.int({ min: 1, max: 20 }),
-  }));
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:7000';
+
+  useEffect(() => {
+    if (!token) return;
+    fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, token]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const headers = { headers: { Authorization: `Bearer ${token}` } };
+
+      const [assignRes, quizRes, lecturesRes] = await Promise.all([
+        fetch(`${API}/api/assignments`, headers).then(r => r.json()),
+        fetch(`${API}/api/quizzes`, headers).then(r => r.json()),
+        fetch(`${API}/api/lectures/teacher/all`, headers).then(r => r.json()),
+      ]);
+
+      const assignmentsCount = Array.isArray(assignRes) ? assignRes.length : 0;
+      const quizzesCount = Array.isArray(quizRes) ? quizRes.length : 0;
+      const materialsCount = Array.isArray(lecturesRes) ? lecturesRes.length : 0;
+
+      // Students and pending grading depend on class filter
+      let studentsCount = 0;
+      let pendingGrading = 0;
+
+      if (filter.year && filter.department && filter.section) {
+        const studentsRes = await fetch(
+          `${API}/api/attendance/students?year=${encodeURIComponent(filter.year)}&department=${encodeURIComponent(filter.department)}&section=${encodeURIComponent(filter.section)}`,
+          headers,
+        ).then(r => r.json());
+
+        studentsCount = Array.isArray(studentsRes) ? studentsRes.length : 0;
+
+        const submissionsRes = await fetch(
+          `${API}/api/student-assignments/class/submissions/all?year=${encodeURIComponent(filter.year)}&department=${encodeURIComponent(filter.department)}&section=${encodeURIComponent(filter.section)}`,
+          headers,
+        ).then(r => r.json());
+
+        if (Array.isArray(submissionsRes)) {
+          pendingGrading = submissionsRes.filter(s => s.marks === null || s.marks === undefined).length;
+        }
+      }
+
+      setDashboardData({
+        classesToday: 0,
+        scheduledClasses: 0,
+        students: studentsCount,
+        pendingGrading,
+        materials: materialsCount,
+        assignmentsCreated: assignmentsCount,
+      });
+    } catch (err) {
+      console.error('Error fetching teacher dashboard data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statsCards = [
     { title: 'Classes Today', value: dashboardData.classesToday, icon: <Calendar className="w-8 h-8 text-yellow-400" /> },
@@ -82,13 +133,15 @@ const DashboardHome = () => {
           className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all flex flex-col justify-between hover:shadow-glow-cyan sm:col-span-2 lg:col-span-1"
         >
           <div>
-            <h3 className="text-xl font-bold text-white mb-2">Explore More</h3>
-            <p className="text-gray-400 text-sm mb-4">Dive into your tasks and check your progress.</p>
+            <h3 className="text-xl font-bold text-white mb-2">Class Snapshot</h3>
+            <p className="text-gray-400 text-sm mb-2">{filter.year && filter.department && filter.section ? `${filter.year}-${filter.department}-${filter.section}` : 'Select a class to view details'}</p>
+            <p className="text-gray-400 text-sm">Students: <span className="font-semibold text-white">{dashboardData.students}</span></p>
+            <p className="text-gray-400 text-sm">Pending Grading: <span className="font-semibold text-white">{dashboardData.pendingGrading}</span></p>
           </div>
-          <button onClick={() => navigate('/dashboard/tasks')} className="w-full mt-auto flex items-center justify-center p-3 bg-cyan-500/20 rounded-lg text-cyan-300 hover:bg-cyan-500/30 transition-all">
-            Go to Tasks
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </button>
+          <div className="mt-4 flex gap-2">
+            <button onClick={fetchDashboardData} disabled={loading} className="flex-1 p-3 bg-cyan-500/20 rounded-lg text-cyan-300 hover:bg-cyan-500/30 transition-all disabled:opacity-50">Refresh</button>
+            <button onClick={() => navigate('/dashboard/submissions')} className="flex-1 p-3 bg-gray-700 rounded-lg text-white">View Submissions</button>
+          </div>
         </motion.div>
       </div>
     </motion.div>

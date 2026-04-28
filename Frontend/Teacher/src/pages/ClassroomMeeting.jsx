@@ -80,6 +80,11 @@ const ClassroomMeeting = () => {
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-400 hidden sm:inline">{participants.length + 1} participants</span>
           <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors"><Users className="w-5 h-5" /></button>
+          <button onClick={() => {
+            const room = 'teacher-' + (faker ? faker.number.int({ min: 10000, max: 99999 }) : Date.now());
+            const url = `https://excalidraw.com/#room=${encodeURIComponent(room)}`;
+            window.open(url, '_blank');
+          }} className="ml-2 p-2 bg-gray-700 rounded hover:bg-gray-600">Whiteboard</button>
         </div>
       </div>
 

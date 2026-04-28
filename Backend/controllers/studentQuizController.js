@@ -83,10 +83,10 @@ exports.submitQuiz = async (req, res) => {
     const fileType = req.file.mimetype.includes("pdf")
       ? "pdf"
       : req.file.mimetype.includes(
-          "vnd.openxmlformats-officedocument.wordprocessingml"
-        )
-      ? "docx"
-      : null;
+            "vnd.openxmlformats-officedocument.wordprocessingml",
+          )
+        ? "docx"
+        : null;
 
     if (!fileType) {
       return res.status(400).json({
@@ -143,7 +143,7 @@ exports.submitQuiz = async (req, res) => {
           console.error(err);
           res.status(500).json({ message: "Failed to save submission." });
         }
-      }
+      },
     );
 
     streamifier.createReadStream(req.file.buffer).pipe(stream);
@@ -163,6 +163,78 @@ exports.getQuizSubmissions = async (req, res) => {
       .sort({ submittedAt: -1 });
 
     res.json(submissions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Get submissions by class (year, department, section) for teacher
+exports.getSubmissionsByClass = async (req, res) => {
+  try {
+    const { year, department, section } = req.query;
+
+    if (!year || !department || !section) {
+      return res.status(400).json({
+        message: "Year, department, and section are required",
+      });
+    }
+
+    // Find quizzes for this class
+    const quizzes = await Quiz.find({
+      year,
+      department,
+      section,
+    });
+
+    const quizIds = quizzes.map((q) => q._id);
+
+    // Find all submissions for these quizzes
+    const submissions = await StudentQuizSubmission.find({
+      quizId: { $in: quizIds },
+    })
+      .populate("studentId", "name email rollNumber")
+      .populate("quizId", "title courseName")
+      .sort({ submittedAt: -1 });
+
+    // Format response
+    const formattedSubmissions = submissions.map((sub) => ({
+      _id: sub._id,
+      studentName: sub.studentId?.name || "Unknown",
+      studentId: sub.studentId?._id,
+      quizTitle: sub.quizId?.title || "Unknown",
+      quizId: sub.quizId?._id,
+      submittedAt: sub.submittedAt,
+      submissionFileUrl: sub.submissionFileUrl,
+      marks: sub.marks,
+      feedback: sub.feedback,
+      status: sub.status,
+    }));
+
+    res.json(formattedSubmissions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Update marks and feedback for a quiz submission
+exports.updateMarks = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { marks, feedback } = req.body;
+
+    const submission = await StudentQuizSubmission.findByIdAndUpdate(
+      submissionId,
+      { marks, feedback },
+      { new: true },
+    );
+
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    res.json(submission);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error." });

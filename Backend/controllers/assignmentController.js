@@ -4,8 +4,16 @@ const streamifier = require("streamifier");
 
 exports.createAssignment = async (req, res) => {
   try {
-    const { title, courseName, section, startDate, dueDate, year, department } =
-      req.body;
+    const {
+      title,
+      courseName,
+      section,
+      startDate,
+      dueDate,
+      year,
+      department,
+      marks,
+    } = req.body;
     const { id: teacherId } = req.user;
 
     if (!title || !courseName || !section || !startDate || !dueDate) {
@@ -25,6 +33,7 @@ exports.createAssignment = async (req, res) => {
     const assignmentData = {
       title,
       courseName,
+      marks: marks !== undefined && marks !== "" ? Number(marks) : null,
       section,
       startDate,
       dueDate,
@@ -38,10 +47,10 @@ exports.createAssignment = async (req, res) => {
       const fileType = req.file.mimetype.includes("pdf")
         ? "pdf"
         : req.file.mimetype.includes(
-            "vnd.openxmlformats-officedocument.wordprocessingml"
-          )
-        ? "docx"
-        : null;
+              "vnd.openxmlformats-officedocument.wordprocessingml",
+            )
+          ? "docx"
+          : null;
 
       if (!fileType) {
         return res.status(400).json({
@@ -65,7 +74,7 @@ exports.createAssignment = async (req, res) => {
           assignmentData.fileType = fileType;
 
           saveAssignment();
-        }
+        },
       );
 
       streamifier.createReadStream(req.file.buffer).pipe(stream);
@@ -126,7 +135,7 @@ exports.getAssignmentById = async (req, res) => {
 
 exports.updateAssignment = async (req, res) => {
   try {
-    const { title, courseName, section, startDate, dueDate } = req.body;
+    const { title, courseName, section, startDate, dueDate, marks } = req.body;
     const assignment = await Assignment.findById(req.params.id);
 
     if (!assignment) {
@@ -135,6 +144,8 @@ exports.updateAssignment = async (req, res) => {
 
     if (title) assignment.title = title;
     if (courseName) assignment.courseName = courseName;
+    if (marks !== undefined)
+      assignment.marks = marks === "" ? null : Number(marks);
     if (section) {
       if (!["A", "B", "C"].includes(section)) {
         return res.status(400).json({
@@ -151,10 +162,10 @@ exports.updateAssignment = async (req, res) => {
       const fileType = req.file.mimetype.includes("pdf")
         ? "pdf"
         : req.file.mimetype.includes(
-            "vnd.openxmlformats-officedocument.wordprocessingml"
-          )
-        ? "docx"
-        : null;
+              "vnd.openxmlformats-officedocument.wordprocessingml",
+            )
+          ? "docx"
+          : null;
 
       if (!fileType) {
         return res.status(400).json({
@@ -177,7 +188,7 @@ exports.updateAssignment = async (req, res) => {
           assignment.fileType = fileType;
 
           saveUpdate();
-        }
+        },
       );
 
       streamifier.createReadStream(req.file.buffer).pipe(stream);

@@ -26,18 +26,24 @@ router.get("/", auth, studentQuizController.getQuizzesForStudent);
 router.get(
   "/:quizId/submission-status",
   auth,
-  studentQuizController.getQuizSubmissionStatus
+  studentQuizController.getQuizSubmissionStatus,
 );
 router.post(
   "/submit",
   auth,
   upload.single("file"),
-  studentQuizController.submitQuiz
+  studentQuizController.submitQuiz,
 );
 router.get(
   "/:quizId/submissions",
   auth,
-  studentQuizController.getQuizSubmissions
+  studentQuizController.getQuizSubmissions,
 );
+router.get(
+  "/class/submissions/all",
+  auth,
+  studentQuizController.getSubmissionsByClass,
+);
+router.put("/:submissionId/marks", auth, studentQuizController.updateMarks);
 
 module.exports = router;

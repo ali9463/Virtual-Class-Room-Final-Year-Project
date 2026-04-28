@@ -1,35 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { faker } from '@faker-js/faker';
-import {
-  GraduationCap,
-  FileText,
-  ClipboardCheck,
-  Calendar,
-  BookOpen,
-  ArrowRight,
-  Users,
-  Settings
-} from 'lucide-react';
+import axios from 'axios';
+import { GraduationCap, Calendar, BookOpen, Users, Settings, FileText } from 'lucide-react';
 
 const DashboardHome = () => {
   const navigate = useNavigate();
+  const [counts, setCounts] = useState({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalMeetings: 0,
+    totalDepartments: 0,
+    totalYears: 0,
+    totalSections: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [dashboardData] = useState(() => ({
-    totalUsers: faker.number.int({ min: 50, max: 500 }),
-    totalYears: faker.number.int({ min: 3, max: 8 }),
-    totalDepartments: faker.number.int({ min: 3, max: 12 }),
-    pendingRequests: faker.number.int({ min: 0, max: 20 }),
-    activeAdmins: faker.number.int({ min: 1, max: 5 }),
-  }));
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:7000';
+
+  useEffect(() => {
+    fetchCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchCounts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [usersRes, yearsRes, deptsRes, sectionsRes, meetingsRes] = await Promise.all([
+        axios.get(`${API}/api/admin/users`).then(r => r.data),
+        axios.get(`${API}/api/admin/years`).then(r => r.data),
+        axios.get(`${API}/api/admin/departments`).then(r => r.data),
+        axios.get(`${API}/api/admin/sections`).then(r => r.data),
+        axios.get(`${API}/api/meetings/admin`).then(r => r.data),
+      ]);
+
+      const totalStudents = Array.isArray(usersRes) ? usersRes.filter(u => u.role === 'student').length : 0;
+      const totalTeachers = Array.isArray(usersRes) ? usersRes.filter(u => u.role === 'teacher').length : 0;
+      const totalMeetings = Array.isArray(meetingsRes) ? meetingsRes.length : 0;
+      const totalDepartments = Array.isArray(deptsRes) ? deptsRes.length : 0;
+      const totalYears = Array.isArray(yearsRes) ? yearsRes.length : 0;
+      const totalSections = Array.isArray(sectionsRes) ? sectionsRes.length : 0;
+
+      setCounts({ totalStudents, totalTeachers, totalMeetings, totalDepartments, totalYears, totalSections });
+    } catch (err) {
+      console.error('Failed to load admin counts', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statsCards = [
-    { title: 'Total Users', value: dashboardData.totalUsers, icon: <Users className="w-8 h-8 text-green-400" /> },
-    { title: 'Academic Years', value: dashboardData.totalYears, icon: <Calendar className="w-8 h-8 text-yellow-400" /> },
-    { title: 'Departments', value: dashboardData.totalDepartments, icon: <BookOpen className="w-8 h-8 text-cyan-400" /> },
-    { title: 'Pending Requests', value: dashboardData.pendingRequests, icon: <ClipboardCheck className="w-8 h-8 text-purple-400" /> },
-    { title: 'Active Admins', value: dashboardData.activeAdmins, icon: <Settings className="w-8 h-8 text-indigo-400" /> },
+    { title: 'Total Students', value: counts.totalStudents, icon: <Users className="w-8 h-8 text-green-400" /> },
+    { title: 'Total Teachers', value: counts.totalTeachers, icon: <GraduationCap className="w-8 h-8 text-indigo-400" /> },
+    { title: 'Total Meetings', value: counts.totalMeetings, icon: <Calendar className="w-8 h-8 text-yellow-400" /> },
+    { title: 'Departments', value: counts.totalDepartments, icon: <BookOpen className="w-8 h-8 text-cyan-400" /> },
+    { title: 'Academic Years', value: counts.totalYears, icon: <FileText className="w-8 h-8 text-sky-400" /> },
+    { title: 'Sections', value: counts.totalSections, icon: <Settings className="w-8 h-8 text-purple-400" /> },
   ];
 
   return (
@@ -47,6 +77,8 @@ const DashboardHome = () => {
       </div>
 
       <h2 className="text-xl font-bold mb-6">System Overview</h2>
+      {error && <div className="bg-red-900/30 border border-red-500/50 p-3 rounded mb-4 text-sm text-red-200">{error}</div>}
+      {loading && <div className="text-sm text-gray-300 mb-4">Loading...</div>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsCards.map((stat, index) => (
           <motion.div
@@ -72,13 +104,16 @@ const DashboardHome = () => {
           className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all flex flex-col justify-between hover:shadow-glow-cyan sm:col-span-2 lg:col-span-1"
         >
           <div>
-            <h3 className="text-xl font-bold text-white mb-2">Explore More</h3>
-            <p className="text-gray-400 text-sm mb-4">Dive into your tasks and check your progress.</p>
+            <h3 className="text-xl font-bold text-white mb-2">Quick Actions</h3>
+            <p className="text-gray-400 text-sm mb-4">Manage core entities quickly from here.</p>
           </div>
-          <button onClick={() => navigate('/dashboard/tasks')} className="w-full mt-auto flex items-center justify-center p-3 bg-cyan-500/20 rounded-lg text-cyan-300 hover:bg-cyan-500/30 transition-all">
-            Go to Tasks
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </button>
+          <div className="mt-2 grid grid-cols-1 gap-2">
+            <button onClick={() => navigate('/admin/users')} className="w-full py-2 bg-cyan-600 rounded text-white">Manage Users</button>
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => navigate('/admin/departments')} className="flex-1 py-2 bg-gray-700 rounded text-white">Departments</button>
+              <button onClick={() => navigate('/admin/years')} className="flex-1 py-2 bg-gray-700 rounded text-white">Years</button>
+            </div>
+          </div>
         </motion.div>
       </div>
     </motion.div>

@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import { Edit2, Trash2, Download, Upload, X, FileText } from "lucide-react";
+import { Edit2, Trash2, Download, Upload, X, FileText, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import ClassFilter from "../../components/ClassFilter";
 
 export default function CreateQuiz() {
   const { token, user } = useAuth();
   const [filter, setFilter] = useState({ year: '', department: '', section: '' });
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     title: "",
     courseName: "",
@@ -51,51 +52,38 @@ export default function CreateQuiz() {
     }
   }, [token]);
 
-  // Fetch sections when department changes
-  useEffect(() => {
-    if (formData.department) {
-      fetchSections(formData.department);
+  const handleYearChange = (e) => {
+    const year = e.target.value;
+    setFormData(prev => ({ ...prev, year, department: '', section: '' }));
+
+    if (year && teacherClasses.length > 0) {
+      const deptsForYear = [...new Set(
+        teacherClasses
+          .filter(c => c.split('-')[0] === year)
+          .map(c => c.split('-')[1])
+      )];
+      setDepartments(deptsForYear.map(d => ({ code: d, _id: d })));
     } else {
-      setSections([]);
-    }
-  }, [formData.department]);
-
-  const fetchYears = async () => {
-    try {
-      const res = await axios.get(`${API}/api/admin/years`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setYears(res.data || []);
-    } catch (err) {
-      console.error("Error fetching years:", err);
+      setDepartments([]);
     }
   };
 
-  const fetchDepartments = async () => {
-    try {
-      const res = await axios.get(`${API}/api/admin/departments`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDepartments(res.data || []);
-    } catch (err) {
-      console.error("Error fetching departments:", err);
-    }
-  };
+  const handleDepartmentChange = (e) => {
+    const department = e.target.value;
+    setFormData(prev => ({ ...prev, department, section: '' }));
 
-  const fetchSections = async (departmentCode) => {
-    try {
-      // Get sections from teacher's selected classes for this department
+    if (department && formData.year && teacherClasses.length > 0) {
       const sectionsForDept = [...new Set(
         teacherClasses
           .filter(c => {
             const parts = c.split('-');
-            return parts[0] === formData.year && parts[1] === departmentCode;
+            return parts[0] === formData.year && parts[1] === department;
           })
           .map(c => c.split('-')[2])
       )];
       setSections(sectionsForDept.map(s => ({ code: s, _id: s })));
-    } catch (err) {
-      console.error("Error processing sections:", err);
+    } else {
+      setSections([]);
     }
   };
 
@@ -112,7 +100,13 @@ export default function CreateQuiz() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    if (name === 'year') {
+      handleYearChange(e);
+    } else if (name === 'department') {
+      handleDepartmentChange(e);
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleFileChange = (e) => {
@@ -258,8 +252,7 @@ export default function CreateQuiz() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <h1 className="text-3xl font-bold mb-6 text-white">Manage Quizzes</h1>
 
-      {/* Class Filter */}
-      <ClassFilter onFilterChange={setFilter} user={user} />
+      {/* (Filter moved below, next to quizzes list) */}
 
       {/* Create/Edit Form */}
       <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20 mb-8">
@@ -440,15 +433,48 @@ export default function CreateQuiz() {
         </form>
       </div>
 
+      {/* Class Filter and Search for quizzes list */}
+      <div className="mb-6">
+        <ClassFilter onFilterChange={setFilter} user={user} />
+        <div className="mt-4 flex gap-2">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 w-5 h-5 text-cyan-400" />
+            <input
+              type="text"
+              placeholder="Search by title or course name..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 pl-10 bg-gray-700 border border-gray-600 rounded text-white focus:border-cyan-500 focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Quizzes List */}
       <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
-        <h2 className="text-xl font-bold mb-4 text-white">Quizzes ({quizzes.length})</h2>
+        <h2 className="text-xl font-bold mb-4 text-white">Quizzes ({quizzes.filter(q => {
+          const matchesSearch = !searchQuery || q.title.toLowerCase().includes(searchQuery.toLowerCase()) || q.courseName.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesFilter = (!filter.year && !filter.department && !filter.section) || (
+            (!filter.year || q.year === filter.year) &&
+            (!filter.department || q.department === filter.department) &&
+            (!filter.section || q.section === filter.section)
+          );
+          return matchesSearch && matchesFilter;
+        }).length})</h2>
 
         {quizzes.length === 0 ? (
           <div className="text-gray-400">No quizzes created yet</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quizzes.map((quiz) => (
+            {quizzes.filter(q => {
+              const matchesSearch = !searchQuery || q.title.toLowerCase().includes(searchQuery.toLowerCase()) || q.courseName.toLowerCase().includes(searchQuery.toLowerCase());
+              const matchesFilter = (!filter.year && !filter.department && !filter.section) || (
+                (!filter.year || q.year === filter.year) &&
+                (!filter.department || q.department === filter.department) &&
+                (!filter.section || q.section === filter.section)
+              );
+              return matchesSearch && matchesFilter;
+            }).map((quiz) => (
               <motion.div
                 key={quiz._id}
                 initial={{ opacity: 0, y: 20 }}
