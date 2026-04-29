@@ -1,7 +1,10 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, BarChart2, User, Users, LogOut, GraduationCap, X } from 'lucide-react';
+import { Home, ClipboardCheck, BarChart2, User, Users, LogOut, GraduationCap, X,
+  Building2,
+  Video
+} from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -20,10 +23,11 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: Home },
-    { name: 'Departments', path: '/dashboard/departments', icon: ClipboardCheck },
+    { name: 'Departments', path: '/dashboard/departments', icon:   Building2,
+ },
     { name: 'Teachers', path: '/dashboard/teachers', icon: GraduationCap },
     { name: 'Students', path: '/dashboard/students', icon: Users },
-    { name: 'Meetings', path: '/dashboard/meetings', icon: ClipboardCheck },
+    { name: 'Meetings', path: '/dashboard/meetings', icon: Video },
     { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
 

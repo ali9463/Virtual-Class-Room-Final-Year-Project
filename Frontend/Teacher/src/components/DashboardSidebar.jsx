@@ -1,7 +1,16 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X, ShieldUser, Book, Bot } from 'lucide-react';
+import { Home, ClipboardCheck, User, LogOut, GraduationCap, X, Bot,
+  HelpCircle,
+  FileText,
+  CalendarCheck,
+  BookOpen,
+  School,
+  Video,
+  CheckCircle2,
+  BarChart3
+ } from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -20,16 +29,15 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: Home },
-    { name: 'Quizzes', path: '/dashboard/quizzes', icon: ClipboardCheck },
-    { name: 'Assignments', path: '/dashboard/assignments', icon: Book },
-    { name: 'Attendance', path: '/dashboard/attendance', icon: ShieldUser },
-    { name: 'Lectures', path: '/dashboard/lectures', icon: ClipboardCheck },
+    { name: 'Quizzes', path: '/dashboard/quizzes', icon: HelpCircle },
+    { name: 'Assignments', path: '/dashboard/assignments', icon: FileText },
+    { name: 'Attendance', path: '/dashboard/attendance', icon: CalendarCheck },
+    { name: 'Lectures', path: '/dashboard/lectures', icon: BookOpen },
     { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: Bot },
-    { name: 'Classes', path: '/dashboard/classes', icon: ClipboardCheck },
-    { name: 'Meetings', path: '/dashboard/meetings', icon: ClipboardCheck },
+    { name: 'Class Meetings', path: '/dashboard/meetings', icon: School },
     { name: 'Assignment Checker', path: '/dashboard/checkassignments', icon: ClipboardCheck },
-    { name: 'Quiz Checker', path: '/dashboard/checkquizes', icon: ClipboardCheck },
-    { name: 'Marks', path: '/dashboard/marks', icon: BarChart2 },
+    { name: 'Quiz Checker', path: '/dashboard/checkquizes', icon: CheckCircle2 },
+    { name: 'Marks', path: '/dashboard/marks', icon: BarChart3 },
     { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
 

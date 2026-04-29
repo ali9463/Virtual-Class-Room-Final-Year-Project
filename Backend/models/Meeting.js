@@ -25,6 +25,10 @@ const meetingSchema = new mongoose.Schema(
       enum: ["teacher", "admin"],
       required: true,
     },
+    attendanceLocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

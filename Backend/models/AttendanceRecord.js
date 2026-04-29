@@ -8,6 +8,12 @@ const attendanceRecordSchema = new mongoose.Schema(
       required: false,
       index: true,
     },
+    meetingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Meeting",
+      required: false,
+      index: true,
+    },
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

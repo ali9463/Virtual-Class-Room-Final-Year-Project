@@ -1,7 +1,10 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X, Videotape,Bot, TvMinimalPlay ,FileText,HelpCircle, Video} from 'lucide-react';
+import { Home, ClipboardCheck, BarChart2, User, LogOut, GraduationCap, X, Videotape,Bot, TvMinimalPlay ,FileText,HelpCircle, Video,School,
+  BarChart3,
+  CalendarCheck,
+  BookOpen} from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -22,10 +25,12 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     { name: 'Home', path: '/dashboard', icon: Home },
     { name: 'Assigments', path: '/dashboard/assignments', icon: FileText },
     { name: 'Quizez', path: '/dashboard/quizez', icon: HelpCircle },
-    { name: 'Marks', path: '/dashboard/marks', icon: BarChart2 },
-    { name: 'Class Meetings', path: '/dashboard/classtimings', icon: Video },
-    { name: 'Attendence', path: '/dashboard/attendence', icon: BarChart2 },
-    { name: 'Lectures', path: '/dashboard/lectures', icon: BarChart2 },
+    { name: 'Marks', path: '/dashboard/marks', icon: BarChart3 },
+    { name: 'Class Meetings', path: '/dashboard/classtimings', icon: School },
+    { name: 'Attendence', path: '/dashboard/attendence', icon:   CalendarCheck,
+ },
+    { name: 'Lectures', path: '/dashboard/lectures', icon:   BookOpen,
+ },
     // { name: 'Recordings', path: '/dashboard/recording', icon: Videotape },
     { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: Bot },
     { name: 'Profile', path: '/dashboard/profile', icon: User },

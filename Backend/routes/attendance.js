@@ -12,6 +12,9 @@ router.get("/", auth, attendanceController.getAttendance);
 // Mark attendance
 router.post("/mark", auth, attendanceController.markAttendance);
 
+// Teacher manual bulk marking (finalize) - locks attendance for the meeting
+router.patch("/teacher/manual/bulk", auth, attendanceController.markManualBulk);
+
 // Get student attendance stats
 router.get("/stats/:studentId", auth, attendanceController.getAttendanceStats);
 
