@@ -4,6 +4,7 @@ import DashboardSidebar from '../components/DashboardSidebar';
 import { useAuth } from '../context/AuthContext';
 import { Bell, Settings, Menu,  } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Notifications from '../components/Notifications';
 
 const DashboardLayout = () => {
   const { user } = useAuth();
@@ -27,7 +28,10 @@ const DashboardLayout = () => {
                 <h1 className="text-xl font-bold hidden sm:block">Welcome, {user?.name.split(' ')[0]}!</h1>
               </div>
               <div className="flex items-center space-x-2 sm:space-x-4">
-               
+               <div className="hidden sm:block">
+            {/* Notifications dropdown */}
+            <Notifications />
+          </div>
               
                 <button onClick={() => navigate('/dashboard/profile')} title="View profile" className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold hover:scale-105 transition-transform">
                   {user?.name.charAt(0)}

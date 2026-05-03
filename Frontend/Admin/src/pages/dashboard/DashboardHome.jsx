@@ -54,25 +54,36 @@ const DashboardHome = () => {
   };
 
   const statsCards = [
-    { title: 'Total Students', value: counts.totalStudents, icon: <Users className="w-8 h-8 text-green-400" /> },
-    { title: 'Total Teachers', value: counts.totalTeachers, icon: <GraduationCap className="w-8 h-8 text-indigo-400" /> },
-    { title: 'Total Meetings', value: counts.totalMeetings, icon: <Calendar className="w-8 h-8 text-yellow-400" /> },
-    { title: 'Departments', value: counts.totalDepartments, icon: <BookOpen className="w-8 h-8 text-cyan-400" /> },
-    { title: 'Academic Years', value: counts.totalYears, icon: <FileText className="w-8 h-8 text-sky-400" /> },
-    { title: 'Sections', value: counts.totalSections, icon: <Settings className="w-8 h-8 text-purple-400" /> },
+    { title: 'Total Students', value: counts.totalStudents, icon: <Users className="w-8 h-8 text-green-400" /> ,
+      onClick: () => navigate('/dashboard/students'),
+    },
+    { title: 'Total Teachers', value: counts.totalTeachers, icon: <GraduationCap className="w-8 h-8 text-indigo-400" /> 
+    , onClick: () => navigate('/dashboard/teachers'),
+    },
+    { title: 'Total Meetings', value: counts.totalMeetings, icon: <Calendar className="w-8 h-8 text-yellow-400" /> 
+    , onClick: () => navigate('/dashboard/meetings'),
+    },
+    { title: 'Departments', value: counts.totalDepartments, icon: <BookOpen className="w-8 h-8 text-cyan-400" /> 
+    , onClick: () => navigate('/dashboard/departments'),
+    },
+    { title: 'Academic Years', value: counts.totalYears, icon: <FileText className="w-8 h-8 text-sky-400" />
+    , onClick: () => navigate('/dashboard/departments'),
+     },
+
   ];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <motion.div initial={{ opacity: 0, y: 20 }}
+     animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <div className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border border-cyan-500/20 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-center sm:text-left">
           <h2 className="text-2xl font-bold mb-2">Admin Console</h2>
-          <p className="text-gray-300">Manage years, departments and users from a single place.</p>
+          <p className="text-gray-300">Manage departments and students from a single place.</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto flex-wrap justify-center">
-          <button onClick={() => navigate('/admin/years')} className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-lg text-white font-semibold">Manage Years</button>
-          <button onClick={() => navigate('/admin/departments')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Manage Departments</button>
-          <button onClick={() => navigate('/admin/users')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Manage Users</button>
+          <button onClick={() => navigate('/dashboard/departments')} className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-lg text-white font-semibold">Manage Departments</button>
+          <button onClick={() => navigate('/dashboard/teachers')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Manage Teachers</button>
+          <button onClick={() => navigate('/dashboard/students')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Manage Students</button>
         </div>
       </div>
 
@@ -85,6 +96,7 @@ const DashboardHome = () => {
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={stat.onClick}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all hover:shadow-glow-cyan"
           >
@@ -108,10 +120,10 @@ const DashboardHome = () => {
             <p className="text-gray-400 text-sm mb-4">Manage core entities quickly from here.</p>
           </div>
           <div className="mt-2 grid grid-cols-1 gap-2">
-            <button onClick={() => navigate('/admin/users')} className="w-full py-2 bg-cyan-600 rounded text-white">Manage Users</button>
+            <button onClick={() => navigate('/dashboard/students')} className="w-full py-2 bg-cyan-600 rounded text-white">Manage Students</button>
             <div className="flex gap-2 mt-2">
-              <button onClick={() => navigate('/admin/departments')} className="flex-1 py-2 bg-gray-700 rounded text-white">Departments</button>
-              <button onClick={() => navigate('/admin/years')} className="flex-1 py-2 bg-gray-700 rounded text-white">Years</button>
+              <button onClick={() => navigate('/dashboard/departments')} className="flex-1 py-2 bg-gray-700 rounded text-white">Departments</button>
+             
             </div>
           </div>
         </motion.div>

@@ -10,6 +10,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import MarksPage from './pages/dashboard/MarksPage';
+import NotificationsPage from './pages/dashboard/Notifications';
+import ForgotPassword from './pages/ForgotPassword';
 import ProfilePage from './pages/dashboard/ProfilePage';
 import CreateAssigment from './pages/dashboard/CreateAssignment';
 import CreateQuiz from './pages/dashboard/CreateQuiz';
@@ -55,6 +57,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/chooseclasses" element={<ChooseClasses />} />
 
             <Route
@@ -66,6 +69,7 @@ function App() {
               }
             >
               <Route index element={<DashboardHome />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               <Route path="marks" element={<MarksPage />} />
               <Route path="checkassignments" element={<AssignmentChecker />} />
               <Route path="checkquizes" element={<QuizChecker />} />

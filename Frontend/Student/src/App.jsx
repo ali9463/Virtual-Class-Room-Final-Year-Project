@@ -10,6 +10,8 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
+import NotificationsPage from './pages/dashboard/Notifications';
+import ForgotPassword from './pages/ForgotPassword';
 import MarksPage from './pages/dashboard/MarksPage';
 import ProfilePage from './pages/dashboard/ProfilePage';
 import Assignments from './pages/dashboard/Assignments';
@@ -52,6 +54,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             <Route
               path="/dashboard"
@@ -62,14 +65,15 @@ function App() {
               }
             >
               <Route index element={<DashboardHome />} />
-              <Route path="assignments" element={<Assignments/>} />
-              <Route path="quizez" element={<Quizez/>} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="assignments" element={<Assignments />} />
+              <Route path="quizez" element={<Quizez />} />
               <Route path="marks" element={<MarksPage />} />
-              <Route path="classtimings" element={<ClassTiming/>} />
-              <Route path="attendence" element={<Attendence/>} />
-              <Route path="recording" element={<Recordings/>} />
-              <Route path="lectures" element={<Lectures/>} />
-              <Route path="aichatbot" element={<AiChatBot/>} />
+              <Route path="classtimings" element={<ClassTiming />} />
+              <Route path="attendence" element={<Attendence />} />
+              <Route path="recording" element={<Recordings />} />
+              <Route path="lectures" element={<Lectures />} />
+              <Route path="aichatbot" element={<AiChatBot />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

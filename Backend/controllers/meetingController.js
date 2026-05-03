@@ -46,6 +46,15 @@ exports.createMeeting = async (req, res) => {
   try {
     const { role, id } = req.user;
 
+    if (role === "teacher") {
+      const teacher = await Teacher.findById(id).select("isVerified");
+      if (teacher && teacher.isVerified === false) {
+        return res.status(403).json({
+          message: "Verification is pending. You cannot create meetings yet.",
+        });
+      }
+    }
+
     if (!["teacher", "admin"].includes(role)) {
       return res
         .status(403)
@@ -151,6 +160,22 @@ exports.createMeeting = async (req, res) => {
       createdBy: id,
       createdByRole: role,
     });
+
+    // notify class if teacher created the meeting
+    try {
+      const notificationService = require("../utils/notificationService");
+      const targetClass = `${meeting.year}-${meeting.department}-${meeting.section}`;
+      notificationService
+        .sendNotificationToClass(targetClass, {
+          title: `New Meeting: ${meeting.title}`,
+          body: `A meeting has been scheduled. Starts: ${meeting.startsAt}`,
+          type: "meeting",
+          link: `/dashboard/meetings`,
+        })
+        .catch((err) => console.error("notify error", err));
+    } catch (e) {
+      console.error("notification send failed", e);
+    }
 
     return res.status(201).json(meeting);
   } catch (error) {

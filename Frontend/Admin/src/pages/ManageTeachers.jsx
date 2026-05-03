@@ -53,12 +53,16 @@ const ManageTeachers = () => {
             name: teacher.name,
             email: teacher.email,
             department: teacher.department,
+            profileImage: teacher.profileImage || '',
+            isVerified: !!teacher.isVerified,
         });
     };
 
     const saveTeacherEdit = async () => {
         try {
-            const res = await axios.put(`${API}/api/admin/users/${editingTeacher}`, editTeacherData);
+            const payload = { ...editTeacherData };
+            // send only fields that exist
+            const res = await axios.put(`${API}/api/admin/users/${editingTeacher}`, payload);
             setTeachers(prev => prev.map(t => t._id === editingTeacher ? res.data.user : t));
             setEditingTeacher(null);
             toast.success('Teacher updated successfully');
@@ -121,16 +125,35 @@ const ManageTeachers = () => {
                                                 />
                                             </td>
                                             <td className="py-3 px-3">
-                                                <select
-                                                    value={editTeacherData.department}
-                                                    onChange={e => setEditTeacherData(prev => ({ ...prev, department: e.target.value }))}
-                                                    className="bg-gray-800 rounded px-2 py-1 text-white text-xs w-full"
-                                                >
-                                                    <option value="">Select</option>
-                                                    {depts.map(d => (
-                                                        <option key={d._id} value={d.code}>{d.code} </option>
-                                                    ))}
-                                                </select>
+                                                <div className="space-y-2">
+                                                    <select
+                                                        value={editTeacherData.department}
+                                                        onChange={e => setEditTeacherData(prev => ({ ...prev, department: e.target.value }))}
+                                                        className="bg-gray-800 rounded px-2 py-1 text-white text-xs w-full"
+                                                    >
+                                                        <option value="">Select</option>
+                                                        {depts.map(d => (
+                                                            <option key={d._id} value={d.code}>{d.code} </option>
+                                                        ))}
+                                                    </select>
+
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Profile image URL"
+                                                        value={editTeacherData.profileImage}
+                                                        onChange={e => setEditTeacherData(prev => ({ ...prev, profileImage: e.target.value }))}
+                                                        className="bg-gray-800 rounded px-2 py-1 text-white text-xs w-full"
+                                                    />
+
+                                                    <label className="flex items-center gap-2 text-sm">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={!!editTeacherData.isVerified}
+                                                            onChange={e => setEditTeacherData(prev => ({ ...prev, isVerified: e.target.checked }))}
+                                                        />
+                                                        <span className="text-gray-300">Verified</span>
+                                                    </label>
+                                                </div>
                                             </td>
                                             <td className="py-3 px-3 flex gap-2">
                                                 <button onClick={saveTeacherEdit} className="text-green-400 hover:text-green-300">
@@ -145,8 +168,17 @@ const ManageTeachers = () => {
                                         <tr key={teacher._id} className="border-b border-gray-700 hover:bg-gray-900/50">
                                             <td className="py-3 px-3 text-white">{teacher.name}</td>
                                             <td className="py-3 px-3 text-gray-300">{teacher.email}</td>
-                                            <td className="py-3 px-3 text-gray-400">
-                                                {depts.find(d => d.code === teacher.department)?.label || teacher.department || '-'}
+                                            <td className="py-3 px-3 text-gray-400 flex items-center justify-between">
+                                                <div>
+                                                    {depts.find(d => d.code === teacher.department)?.label || teacher.department || '-'}
+                                                </div>
+                                                <div>
+                                                    {teacher.isVerified ? (
+                                                        <span className="text-green-400 text-xs font-semibold">Verified</span>
+                                                    ) : (
+                                                        <span className="text-amber-300 text-xs font-semibold">Pending</span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="py-3 px-3 flex gap-3">
                                                 <button onClick={() => startEditTeacher(teacher)} className="text-blue-400 hover:text-blue-300">

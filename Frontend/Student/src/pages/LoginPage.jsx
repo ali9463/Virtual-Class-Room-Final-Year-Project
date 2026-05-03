@@ -103,7 +103,7 @@ const LoginPage = () => {
                   <select
                     id="rollYear"
                     value={rollYear}
-                    onChange={(e) => setRollYear(e.target.value)}
+                    onChange={(e) => { setRollYear(e.target.value); setRollDept(''); }}
                     className="w-full px-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none"
                   >
                     <option value="">Select Year</option>
@@ -121,9 +121,18 @@ const LoginPage = () => {
                     className="w-full px-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 focus:outline-none"
                   >
                     <option value="">Select Dept</option>
-                    {depts.map(d => (
-                      <option key={d._id} value={d.code}>{d.code}</option>
-                    ))}
+                    {depts
+                      .filter(d => {
+                        // department may have populated yearId object or raw id
+                        if (!rollYear) return true;
+                        if (!d) return false;
+                        if (d.yearId && typeof d.yearId === 'object') return d.yearId.code === rollYear;
+                        if (d.yearId && typeof d.yearId === 'string') return d.yearId === rollYear;
+                        return d.code?.startsWith(rollYear) || false;
+                      })
+                      .map(d => (
+                        <option key={d._id} value={d.code}>{d.code}</option>
+                      ))}
                   </select>
                 </div>
                 <div>
@@ -168,7 +177,7 @@ const LoginPage = () => {
                 <input type="checkbox" className="w-4 h-4 text-cyan-500 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2" />
                 <span className="ml-2 text-sm text-gray-300">Remember me</span>
               </label>
-              <a href="#" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
+              <a href="/forgot-password" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
                 Forgot password?
               </a>
             </div>

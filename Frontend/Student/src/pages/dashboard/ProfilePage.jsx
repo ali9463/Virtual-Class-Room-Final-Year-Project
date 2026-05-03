@@ -3,16 +3,25 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { User, Mail, Hash, Edit, Save, X, Upload } from 'lucide-react';
+import { User, Mail, Hash, X, Upload, Lock, Eye, EyeOff, Save } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     profileImage: user?.profileImage || null,
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -86,7 +95,44 @@ const ProfilePage = () => {
       email: user?.email || '',
       profileImage: user?.profileImage || null,
     });
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
     setIsEditing(false);
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New password and confirm password do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      setPasswordLoading(true);
+      const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const res = await axios.put(`${API}/api/auth/change-password`, passwordData);
+      toast.success(res.data.message || 'Password changed successfully');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      console.error('Change password error:', err);
+      toast.error(err.response?.data?.message || 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   if (isEditing) {
@@ -162,6 +208,86 @@ const ProfilePage = () => {
             </div>
           </div>
 
+          {/* Change Password Section */}
+          <div className="mb-8 border-t border-gray-700 pt-8">
+            <h3 className="text-xl font-semibold mb-6 text-white flex items-center gap-2">
+              <Lock className="w-5 h-5 text-cyan-400" />
+              Change Password
+            </h3>
+            <form onSubmit={handlePasswordChange} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all pr-12"
+                    placeholder="Enter current password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all pr-12"
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all pr-12"
+                    placeholder="Confirm new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="flex items-center gap-2 bg-cyan-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-cyan-600 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {passwordLoading ? 'Changing...' : 'Change Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex gap-3 justify-end">
             <button
@@ -208,9 +334,9 @@ const ProfilePage = () => {
             <h2 className="text-3xl font-bold text-white">{user?.name}</h2>
             <p className="text-lg text-cyan-400">Student</p>
           </div>
-          
+
         </div>
-        
+
         <div className="mt-10 border-t border-gray-700 pt-8">
           <h3 className="text-xl font-semibold mb-6 text-white">Personal Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -244,17 +370,17 @@ const ProfilePage = () => {
               </div>
             </div>
             <div className="mt-8  text-right">
-          <button
-            onClick={() => setIsEditing(true)}
-            className="bg-cyan-500/80 text-white font-semibold py-2 px-6 rounded-lg hover:bg-cyan-500 transition-colors flex items-center gap-2 ml-auto"
-          >
-            Update Profile
-          </button>
-        </div>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="bg-cyan-500/80 text-white font-semibold py-2 px-6 rounded-lg hover:bg-cyan-500 transition-colors flex items-center gap-2 ml-auto"
+              >
+                Update Profile
+              </button>
+            </div>
           </div>
         </div>
 
-        
+
       </div>
     </motion.div>
   );

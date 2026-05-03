@@ -1,4 +1,5 @@
 const Quiz = require("../models/Quiz");
+const Teacher = require("../models/Teachers");
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
 
@@ -15,6 +16,15 @@ exports.createQuiz = async (req, res) => {
       department,
     } = req.body;
     const { id: teacherId } = req.user;
+
+    if (req.user?.role === "teacher") {
+      const teacher = await Teacher.findById(teacherId).select("isVerified");
+      if (teacher && teacher.isVerified === false) {
+        return res.status(403).json({
+          message: "Verification is pending. You cannot create quizzes yet.",
+        });
+      }
+    }
 
     if (!title || !courseName || !section || !startDate || !dueDate || !marks) {
       return res.status(400).json({
@@ -54,10 +64,10 @@ exports.createQuiz = async (req, res) => {
       const fileType = req.file.mimetype.includes("pdf")
         ? "pdf"
         : req.file.mimetype.includes(
-            "vnd.openxmlformats-officedocument.wordprocessingml"
-          )
-        ? "docx"
-        : null;
+              "vnd.openxmlformats-officedocument.wordprocessingml",
+            )
+          ? "docx"
+          : null;
 
       if (!fileType) {
         return res.status(400).json({
@@ -81,7 +91,7 @@ exports.createQuiz = async (req, res) => {
           quizData.fileType = fileType;
 
           saveQuiz();
-        }
+        },
       );
 
       streamifier.createReadStream(req.file.buffer).pipe(stream);
@@ -94,6 +104,21 @@ exports.createQuiz = async (req, res) => {
             message: "Quiz created successfully.",
             quiz,
           });
+          // Send notification to class (non-blocking)
+          try {
+            const notificationService = require("../utils/notificationService");
+            const targetClass = `${quiz.year}-${quiz.department}-${quiz.section}`;
+            notificationService
+              .sendNotificationToClass(targetClass, {
+                title: `New Quiz: ${quiz.title}`,
+                body: `A new quiz has been posted for ${quiz.courseName}. Due: ${quiz.dueDate}`,
+                type: "quiz",
+                link: `/dashboard/quizzes`,
+              })
+              .catch((err) => console.error("notify error", err));
+          } catch (e) {
+            console.error("notification send failed", e);
+          }
         } catch (err) {
           console.error(err);
           res.status(500).json({ message: "Failed to create quiz." });
@@ -107,6 +132,21 @@ exports.createQuiz = async (req, res) => {
         message: "Quiz created successfully.",
         quiz,
       });
+      // notify class
+      try {
+        const notificationService = require("../utils/notificationService");
+        const targetClass = `${quiz.year}-${quiz.department}-${quiz.section}`;
+        notificationService
+          .sendNotificationToClass(targetClass, {
+            title: `New Quiz: ${quiz.title}`,
+            body: `A new quiz has been posted for ${quiz.courseName}. Due: ${quiz.dueDate}`,
+            type: "quiz",
+            link: `/dashboard/quizzes`,
+          })
+          .catch((err) => console.error("notify error", err));
+      } catch (e) {
+        console.error("notification send failed", e);
+      }
     }
   } catch (err) {
     console.error(err);
@@ -175,10 +215,10 @@ exports.updateQuiz = async (req, res) => {
       const fileType = req.file.mimetype.includes("pdf")
         ? "pdf"
         : req.file.mimetype.includes(
-            "vnd.openxmlformats-officedocument.wordprocessingml"
-          )
-        ? "docx"
-        : null;
+              "vnd.openxmlformats-officedocument.wordprocessingml",
+            )
+          ? "docx"
+          : null;
 
       if (!fileType) {
         return res.status(400).json({
@@ -201,7 +241,7 @@ exports.updateQuiz = async (req, res) => {
           quiz.fileType = fileType;
 
           saveUpdate();
-        }
+        },
       );
 
       streamifier.createReadStream(req.file.buffer).pipe(stream);

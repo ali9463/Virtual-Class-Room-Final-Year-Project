@@ -8,6 +8,8 @@ import DashboardLayout from './layouts/DashboardLayout';
 import DashboardHome from './pages/dashboard/DashboardHome';
 import DepartmentPage from './pages/dashboard/DepartmentPage';
 import MarksPage from './pages/dashboard/MarksPage';
+import NotificationsPage from './pages/dashboard/Notifications';
+import ForgotPassword from './pages/ForgotPassword';
 import ProfilePage from './pages/dashboard/ProfilePage';
 import ManageStudents from './pages/ManageStudents';
 import ManageTeachers from './pages/ManageTeachers';
@@ -39,10 +41,10 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={true} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
         <div className="min-h-screen bg-black">
           <Routes>
             <Route path="/" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
 
             <Route
@@ -54,6 +56,7 @@ function App() {
               }
             >
               <Route index element={<DashboardHome />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               <Route path="departments" element={<DepartmentPage />} />
               <Route path="teachers" element={<ManageTeachers />} />
               <Route path="students" element={<ManageStudents />} />

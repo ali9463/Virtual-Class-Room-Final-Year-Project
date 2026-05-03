@@ -19,6 +19,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD,
   },
 });
+const Notification = require("../models/Notification");
 
 // Generate 4-digit OTP
 const generateOTP = () => {
@@ -116,7 +117,31 @@ exports.sendOTP = async (req, res) => {
         `,
       };
 
-      await transporter.sendMail(mailOptions);
+      // Retry transient DNS/network errors (EAI_AGAIN) a few times
+      const sendWithRetry = async (options, attempts = 3) => {
+        let tryCount = 0;
+        let delay = 1000;
+        while (tryCount < attempts) {
+          try {
+            return await transporter.sendMail(options);
+          } catch (err) {
+            tryCount++;
+            const isTransient =
+              err &&
+              (err.code === "EAI_AGAIN" ||
+                err.code === "EDNS" ||
+                err.errno === -3001);
+            if (!isTransient || tryCount >= attempts) throw err;
+            console.warn(
+              `Transient email error (${err.code}). Retrying ${tryCount}/${attempts} after ${delay}ms...`,
+            );
+            await new Promise((r) => setTimeout(r, delay));
+            delay *= 2;
+          }
+        }
+      };
+
+      await sendWithRetry(mailOptions);
       console.log(`OTP email sent to ${email}`);
 
       return res.json({
@@ -136,6 +161,53 @@ exports.sendOTP = async (req, res) => {
 };
 
 // Verify OTP
+exports.getCurrentUser = async (req, res) => {
+  try {
+    const { id } = req.user;
+    if (!id) {
+      return res.status(401).json({ message: "Unauthorized." });
+    }
+
+    let user = await User.findById(id);
+    if (!user) {
+      user = await Teacher.findById(id);
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const responseUser = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      profileImage: user.profileImage,
+      role: user.role,
+    };
+
+    if (user.rollNumber) {
+      responseUser.rollNumber = user.rollNumber;
+      responseUser.rollYear = user.rollYear;
+      responseUser.rollDept = user.rollDept;
+      responseUser.rollSerial = user.rollSerial;
+      responseUser.section = user.section;
+    }
+
+    if (user.department) {
+      responseUser.department = user.department;
+    }
+
+    if (typeof user.isVerified !== "undefined") {
+      responseUser.isVerified = Boolean(user.isVerified);
+    }
+
+    return res.json({ user: responseUser });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
 exports.verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -181,6 +253,132 @@ exports.verifyOTP = async (req, res) => {
       message: "Email verified successfully.",
       verified: true,
     });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Forgot password - generate temporary password and email it to user
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required." });
+
+    // basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
+    // Find in User or Teacher
+    let user = await User.findOne({ email: email.toLowerCase() });
+    let isTeacher = false;
+    if (!user) {
+      user = await Teacher.findOne({ email: email.toLowerCase() });
+      if (user) isTeacher = true;
+    }
+
+    if (!user) return res.status(404).json({ message: "Email not found." });
+
+    // Generate temporary password (exactly 6 digits)
+    const tempPass = Math.floor(100000 + Math.random() * 900000).toString();
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(tempPass, salt);
+
+    // Update password
+    user.password = hashed;
+    await user.save();
+
+    // Send email with temporary password
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      return res
+        .status(500)
+        .json({ message: "Email service is not configured." });
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset - Virtual CUI",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width:600px;margin:0 auto;padding:20px;background:#f5f5f5;border-radius:8px;">
+          <div style="background:#fff;padding:30px;border-radius:8px;text-align:center;">
+            <h2 style="color:#333;margin-bottom:10px">Password Reset</h2>
+            <p style="color:#666">A temporary password was generated for your account. Use it to sign in and immediately change your password from your profile.</p>
+            <div style="background:#e8f4f8;padding:16px;border-radius:8px;margin:20px 0;">
+              <p style="font-size:20px;font-weight:bold;color:#00A8E8;margin:0;">${tempPass}</p>
+            </div>
+            <p style="color:#999;font-size:12px">If you didn't request this, please contact support.</p>
+          </div>
+        </div>
+      `,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (emailErr) {
+      console.error("Failed to send reset email:", emailErr);
+      return res
+        .status(500)
+        .json({ message: "Failed to send email. Check email configuration." });
+    }
+
+    return res.json({ message: "Temporary password sent to your email." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!id) {
+      return res.status(401).json({ message: "Unauthorized." });
+    }
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "All password fields are required." });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "New password and confirm password do not match." });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 6 characters long." });
+    }
+
+    let user = await User.findById(id);
+    if (!user) {
+      user = await Teacher.findById(id);
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ message: "Current password is incorrect." });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    return res.json({ message: "Password changed successfully." });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error." });
@@ -313,6 +511,41 @@ exports.signup = async (req, res) => {
       };
       const teacher = new Teacher(teacherData);
       await teacher.save();
+      // Schedule auto-verify after 5 minutes (server must stay running)
+      setTimeout(
+        async () => {
+          try {
+            const fresh = await Teacher.findById(teacher._id);
+            if (fresh && !fresh.isVerified) {
+              fresh.isVerified = true;
+              await fresh.save();
+              // Notify teacher
+              const tNote = new Notification({
+                title: "Account verified",
+                body: "Your teacher account has been automatically verified.",
+                type: "verification",
+                link: "/dashboard/profile",
+                targetClass: null,
+                targetUsers: [fresh._id],
+              });
+              await tNote.save();
+              // Notify admins only (not global)
+              const aNote = new Notification({
+                title: "Teacher auto-verified",
+                body: `Teacher ${fresh.name} (${fresh.email}) was auto-verified.`,
+                type: "admin",
+                link: `/admin/users`,
+                targetClass: null,
+                targetRole: "admin",
+              });
+              await aNote.save();
+            }
+          } catch (e) {
+            console.error("Auto-verify task failed", e);
+          }
+        },
+        5 * 60 * 1000,
+      );
       return res
         .status(201)
         .json({ message: "Teacher registered successfully." });
@@ -399,6 +632,15 @@ exports.signin = async (req, res) => {
     // Add department for teachers
     if (user.department) {
       response.user.department = user.department;
+    }
+
+    if (typeof user.isVerified !== "undefined") {
+      response.user.isVerified = Boolean(user.isVerified);
+    }
+
+    // Add verification flag for teachers
+    if (typeof user.isVerified !== "undefined") {
+      response.user.isVerified = Boolean(user.isVerified);
     }
 
     return res.json(response);

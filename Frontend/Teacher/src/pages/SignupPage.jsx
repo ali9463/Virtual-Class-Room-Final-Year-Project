@@ -484,7 +484,7 @@ const SignupPage = () => {
           <div className="mt-8 text-center">
             <p className="text-gray-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
+              <Link to="/" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
                 Sign in here
               </Link>
             </p>

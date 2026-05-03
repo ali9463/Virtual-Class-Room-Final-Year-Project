@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -9,13 +9,12 @@ import {
   ClipboardCheck,
   Calendar,
   BookOpen,
-  PlayCircle,
   Award,
   AlertCircle,
   Loader
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import Notifications from '../../components/Notifications';
+
 import useNotifications from '../../hooks/useNotifications';
 
 const DashboardHome = () => {
@@ -37,6 +36,16 @@ const DashboardHome = () => {
       setLoading(true);
       setError(null);
 
+      const attendanceRes = await axios.get(`${API}/api/attendance/stats/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const attendanceBody = attendanceRes.data || {};
+      const attendanceStats = attendanceBody.stats || { present: 0, total: 0 };
+      const attendancePercentage = attendanceStats.total > 0
+        ? ((attendanceStats.present / attendanceStats.total) * 100).toFixed(2)
+        : 0;
+
       // Fetch assignments
       const assignmentsRes = await axios.get(`${API}/api/student-assignments`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -55,11 +64,59 @@ const DashboardHome = () => {
       });
       const lectures = lecturesRes.data || [];
 
+      // Fetch marks/grades by querying submission-status for each assignment/quiz
+      const assignmentIds = assignments.map(a => a._id);
+      const quizIds = quizzes.map(q => q._id);
+
+      const assignmentSubmissionPromises = assignmentIds.map(id =>
+        axios
+          .get(`${API}/api/student-assignments/${id}/submission-status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then(res => res.data)
+          .catch(() => null),
+      );
+
+      const quizSubmissionPromises = quizIds.map(id =>
+        axios
+          .get(`${API}/api/student-quizzes/${id}/submission-status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then(res => res.data)
+          .catch(() => null),
+      );
+
+      const assignmentSubs = await Promise.all(assignmentSubmissionPromises);
+      const quizSubs = await Promise.all(quizSubmissionPromises);
+
+      // Compute average as MarksPage does: average of percentages (obtained/total * 100)
+      const percents = [];
+      assignments.forEach((assignment, idx) => {
+        const submission = assignmentSubs[idx] || null;
+        const total = assignment.marks ?? null;
+        const obtained = submission && submission.marks != null ? Number(submission.marks) : null;
+        if (total && obtained != null) {
+          percents.push((obtained / Number(total)) * 100);
+        }
+      });
+      quizzes.forEach((quiz, idx) => {
+        const submission = quizSubs[idx] || null;
+        const total = quiz.marks ?? null;
+        const obtained = submission && submission.marks != null ? Number(submission.marks) : null;
+        if (total && obtained != null) {
+          percents.push((obtained / Number(total)) * 100);
+        }
+      });
+
+      const averageMarks = percents.length > 0
+        ? (percents.reduce((sum, p) => sum + p, 0) / percents.length).toFixed(1)
+        : 0;
+
       setDashboardData({
         assignments: assignments.length,
         quizzes: quizzes.length,
-        attendance: 0,
-        averageMarks: 0,
+        attendance: attendancePercentage,
+        averageMarks: averageMarks,
         lectureNotes: lectures.length,
         lectureVideos: 0,
         subjects: new Set([
@@ -93,17 +150,17 @@ const DashboardHome = () => {
       color: 'bg-blue-500/10 border-blue-500/20'
     },
     {
-      title: 'Quizzes',
+      title: 'Total Quizzes',
       value: dashboardData?.quizzes || 0,
       icon: <ClipboardCheck className="w-8 h-8 text-green-400" />,
-      onClick: () => navigate('/dashboard/quizzes'),
+      onClick: () => navigate('/dashboard/quizez'),
       color: 'bg-green-500/10 border-green-500/20'
     },
     {
       title: 'Attendance',
       value: `${dashboardData?.attendance || 0}%`,
       icon: <Calendar className="w-8 h-8 text-yellow-400" />,
-      onClick: () => navigate('/dashboard/attendance'),
+      onClick: () => navigate('/dashboard/attendence'),
       color: 'bg-yellow-500/10 border-yellow-500/20'
     },
     {
@@ -121,17 +178,10 @@ const DashboardHome = () => {
       color: 'bg-cyan-500/10 border-cyan-500/20'
     },
     {
-      title: 'Lecture Videos',
-      value: dashboardData?.lectureVideos || 0,
-      icon: <PlayCircle className="w-8 h-8 text-red-400" />,
-      onClick: () => navigate('/dashboard/recordings'),
-      color: 'bg-red-500/10 border-red-500/20'
-    },
-    {
-      title: 'Subjects',
+      title: 'Overall Tasks',
       value: dashboardData?.subjects || 0,
       icon: <GraduationCap className="w-8 h-8 text-indigo-400" />,
-      onClick: () => navigate('/dashboard/classes'),
+      onClick: () => navigate('/dashboard/assignments'),
       color: 'bg-indigo-500/10 border-indigo-500/20'
     },
   ];
@@ -156,16 +206,12 @@ const DashboardHome = () => {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/classroom')}
+            onClick={() => navigate('/dashboard/classtimings')}
             className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 rounded-lg font-semibold hover:from-cyan-400 hover:to-blue-500 transition-all transform hover:scale-105 text-white flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             Join Class
             <Video className="w-5 h-5" />
           </button>
-          <div className="hidden sm:block">
-            {/* Notifications dropdown */}
-            <Notifications />
-          </div>
         </div>
       </div>
 
@@ -207,7 +253,7 @@ const DashboardHome = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             onClick={stat.onClick}
-            className={`text-left bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border ${stat.color} hover:border-opacity-100 transition-all hover:shadow-lg transform hover:scale-105`}
+            className={`text-left bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border ${stat.color} hover:border-opacity-100 transition-all transform hover:scale-105 hover:shadow-glow-cyan`}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 rounded-lg bg-gray-700">

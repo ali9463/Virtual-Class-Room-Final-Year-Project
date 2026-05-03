@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import ClassFilter from '../../components/ClassFilter';
 
 const Meetings = () => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
     const [filter, setFilter] = useState({ year: '', department: '', section: '' });
@@ -18,6 +18,7 @@ const Meetings = () => {
     const [meetings, setMeetings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [blocked, setBlocked] = useState(false);
 
     const canCreate = useMemo(() => {
         return Boolean(
@@ -38,11 +39,25 @@ const Meetings = () => {
     };
 
     useEffect(() => {
+        refreshUser?.();
         fetchMeetings();
     }, []);
 
+    useEffect(() => {
+        if (user && user.role === 'teacher' && user.isVerified === false) {
+            setBlocked(true);
+        } else {
+            setBlocked(false);
+        }
+    }, [user]);
+
     const handleCreate = async (e) => {
         e.preventDefault();
+
+        if (blocked) {
+            toast.info('Verification is pending. You cannot create meetings yet.');
+            return;
+        }
 
         if (!canCreate) {
             toast.error('Please fill all required fields and class filter.');
@@ -198,7 +213,7 @@ const Meetings = () => {
 
                     <div className="md:col-span-2 flex justify-end">
                         <button
-                            disabled={submitting}
+                            disabled={submitting || blocked}
                             type="submit"
                             className="px-4 py-2 bg-cyan-600 rounded-lg hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >

@@ -8,9 +8,9 @@ const teacherSchema = new mongoose.Schema(
     department: { type: String, required: true },
     profileImage: { type: String, default: null },
     role: { type: String, default: "teacher" },
+    isVerified: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
-
 
 module.exports = mongoose.model("Teacher", teacherSchema);

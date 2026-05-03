@@ -1,4 +1,5 @@
 const Assignment = require("../models/Assignment");
+const Teacher = require("../models/Teachers");
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
 
@@ -15,6 +16,16 @@ exports.createAssignment = async (req, res) => {
       marks,
     } = req.body;
     const { id: teacherId } = req.user;
+
+    if (req.user?.role === "teacher") {
+      const teacher = await Teacher.findById(teacherId).select("isVerified");
+      if (teacher && teacher.isVerified === false) {
+        return res.status(403).json({
+          message:
+            "Verification is pending. You cannot create assignments yet.",
+        });
+      }
+    }
 
     if (!title || !courseName || !section || !startDate || !dueDate) {
       return res.status(400).json({

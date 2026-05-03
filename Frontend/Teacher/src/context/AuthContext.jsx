@@ -15,6 +15,30 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+  const refreshUser = async (tokenOverride) => {
+    const savedToken = tokenOverride || localStorage.getItem('token');
+    if (!savedToken) return null;
+
+    try {
+      const res = await axios.get(`${API}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${savedToken}` },
+      });
+
+      if (res.data?.user) {
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        setUser(res.data.user);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+        return res.data.user;
+      }
+      return null;
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     const savedToken = localStorage.getItem('token');
@@ -23,11 +47,10 @@ export const AuthProvider = ({ children }) => {
     }
     if (savedToken) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+      refreshUser(savedToken);
     }
     setLoading(false);
   }, []);
-
-  const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const login = async (identifier, password) => {
     try {
@@ -37,6 +60,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(user));
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
+      await refreshUser(token);
       return { success: true };
     } catch (err) {
       return { success: false, message: err.response?.data?.message || err.message };
@@ -105,6 +129,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     updateProfile,
+    refreshUser,
     loading
   };
 

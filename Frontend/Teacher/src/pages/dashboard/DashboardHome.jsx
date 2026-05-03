@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Video, FileText, ClipboardCheck, Calendar, BookOpen, Users } from 'lucide-react';
+import { Video, FileText, ClipboardCheck, Calendar, BookOpen, Users, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ClassFilter from '../../components/ClassFilter';
 
@@ -17,6 +17,7 @@ const DashboardHome = () => {
     materials: 0,
     assignmentsCreated: 0,
   });
+  const [quizzesCount, setQuizzesCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -32,48 +33,81 @@ const DashboardHome = () => {
     try {
       setLoading(true);
       setError(null);
-      const headers = { headers: { Authorization: `Bearer ${token}` } };
+      const opts = { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } };
 
-      const [assignRes, quizRes, lecturesRes] = await Promise.all([
-        fetch(`${API}/api/assignments`, headers).then(r => r.json()),
-        fetch(`${API}/api/quizzes`, headers).then(r => r.json()),
-        fetch(`${API}/api/lectures/teacher/all`, headers).then(r => r.json()),
+      // Fetch teacher resources and meetings
+      const [assignResRaw, quizResRaw, lecturesResRaw, meetingsResRaw] = await Promise.all([
+        fetch(`${API}/api/assignments`, opts),
+        fetch(`${API}/api/quizzes`, opts),
+        fetch(`${API}/api/lectures/teacher/all`, opts),
+        fetch(`${API}/api/meetings/my`, opts),
       ]);
+
+      const safeJson = async (r) => {
+        try {
+          if (!r || !r.ok) return [];
+          return await r.json();
+        } catch (e) {
+          return [];
+        }
+      };
+
+      const assignRes = await safeJson(assignResRaw);
+      const quizRes = await safeJson(quizResRaw);
+      const lecturesRes = await safeJson(lecturesResRaw);
+      const meetingsRes = await safeJson(meetingsResRaw);
 
       const assignmentsCount = Array.isArray(assignRes) ? assignRes.length : 0;
       const quizzesCount = Array.isArray(quizRes) ? quizRes.length : 0;
       const materialsCount = Array.isArray(lecturesRes) ? lecturesRes.length : 0;
+
+      // Compute classes today and scheduled upcoming classes from meetings
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+      let classesToday = 0;
+      let scheduledClasses = 0;
+      if (Array.isArray(meetingsRes)) {
+        meetingsRes.forEach(m => {
+          const start = m.startsAt ? new Date(m.startsAt) : null;
+          if (!start) return;
+          if (start >= startOfToday && start < endOfToday) classesToday += 1;
+          if (start >= now) scheduledClasses += 1;
+        });
+      }
 
       // Students and pending grading depend on class filter
       let studentsCount = 0;
       let pendingGrading = 0;
 
       if (filter.year && filter.department && filter.section) {
-        const studentsRes = await fetch(
+        const studentsResRaw = await fetch(
           `${API}/api/attendance/students?year=${encodeURIComponent(filter.year)}&department=${encodeURIComponent(filter.department)}&section=${encodeURIComponent(filter.section)}`,
-          headers,
-        ).then(r => r.json());
-
+          opts,
+        );
+        const studentsRes = await safeJson(studentsResRaw);
         studentsCount = Array.isArray(studentsRes) ? studentsRes.length : 0;
 
-        const submissionsRes = await fetch(
+        const submissionsResRaw = await fetch(
           `${API}/api/student-assignments/class/submissions/all?year=${encodeURIComponent(filter.year)}&department=${encodeURIComponent(filter.department)}&section=${encodeURIComponent(filter.section)}`,
-          headers,
-        ).then(r => r.json());
-
+          opts,
+        );
+        const submissionsRes = await safeJson(submissionsResRaw);
         if (Array.isArray(submissionsRes)) {
           pendingGrading = submissionsRes.filter(s => s.marks === null || s.marks === undefined).length;
         }
       }
 
       setDashboardData({
-        classesToday: 0,
-        scheduledClasses: 0,
+        classesToday,
+        scheduledClasses,
         students: studentsCount,
         pendingGrading,
         materials: materialsCount,
         assignmentsCreated: assignmentsCount,
       });
+      setQuizzesCount(Array.isArray(quizRes) ? quizRes.length : 0);
     } catch (err) {
       console.error('Error fetching teacher dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -83,12 +117,22 @@ const DashboardHome = () => {
   };
 
   const statsCards = [
-    { title: 'Classes Today', value: dashboardData.classesToday, icon: <Calendar className="w-8 h-8 text-yellow-400" /> },
-    { title: 'Scheduled Classes', value: dashboardData.scheduledClasses, icon: <Video className="w-8 h-8 text-blue-400" /> },
-    { title: 'Students', value: dashboardData.students, icon: <Users className="w-8 h-8 text-green-400" /> },
-    { title: 'Pending Grading', value: dashboardData.pendingGrading, icon: <ClipboardCheck className="w-8 h-8 text-purple-400" /> },
-    { title: 'Materials', value: dashboardData.materials, icon: <BookOpen className="w-8 h-8 text-cyan-400" /> },
-    { title: 'Assignments', value: dashboardData.assignmentsCreated, icon: <FileText className="w-8 h-8 text-indigo-400" /> },
+    {
+      title: 'Total Assignments', value: dashboardData.assignmentsCreated, icon: <FileText className="w-8 h-8 text-indigo-400" />,
+      onClick: () => navigate('/dashboard/assignments'),
+    },
+    {
+      title: 'Total Quizzes', value: quizzesCount, icon: <Video className="w-8 h-8 text-blue-400" />,
+      onClick: () => navigate('/dashboard/quizzes'),
+    },
+    {
+      title: 'Total Lectures', value: dashboardData.materials, icon: <BookOpen className="w-8 h-8 text-cyan-400" />,
+      onClick: () => navigate('/dashboard/lectures'),
+    },
+    {
+      title: 'Pending Grading', value: dashboardData.pendingGrading, icon: <CheckCircle className="w-8 h-8 text-red-400" />,
+      onClick: () => navigate('/dashboard/marks'),
+    },
   ];
 
   return (
@@ -101,9 +145,9 @@ const DashboardHome = () => {
           <p className="text-gray-300">Quick actions for teachers: start class, create assignments, and grade students.</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto flex-wrap justify-center">
-          <button onClick={() => navigate('/classroom')} className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-lg text-white font-semibold">Start Class</button>
-          <button onClick={() => navigate('/dashboard/tasks')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Create Assignment</button>
-          <button onClick={() => navigate('/dashboard/marks')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Gradebook</button>
+          <button onClick={() => navigate('/dashboard/meetings')} className="bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 rounded-lg text-white font-semibold">Start Class</button>
+          <button onClick={() => navigate('/dashboard/assignments')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Create Assignment</button>
+          <button onClick={() => navigate('/dashboard/marks')} className="bg-gray-700 px-4 py-2 rounded-lg text-white">Marks</button>
         </div>
       </div>
 
@@ -114,6 +158,7 @@ const DashboardHome = () => {
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={stat.onClick}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             className="bg-gray-800/50 backdrop-blur-lg p-6 rounded-xl border border-cyan-500/20 hover:border-cyan-500/40 transition-all hover:shadow-glow-cyan"
           >
@@ -140,7 +185,7 @@ const DashboardHome = () => {
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={fetchDashboardData} disabled={loading} className="flex-1 p-3 bg-cyan-500/20 rounded-lg text-cyan-300 hover:bg-cyan-500/30 transition-all disabled:opacity-50">Refresh</button>
-            <button onClick={() => navigate('/dashboard/submissions')} className="flex-1 p-3 bg-gray-700 rounded-lg text-white">View Submissions</button>
+            <button onClick={() => navigate('/dashboard/checkassignments')} className="flex-1 p-3 bg-gray-700 rounded-lg text-white">View Submissions</button>
           </div>
         </motion.div>
       </div>

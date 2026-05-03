@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import ClassFilter from '../../components/ClassFilter';
 
 const CreateAssignment = () => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [filter, setFilter] = useState({ year: '', department: '', section: '' });
     const [searchQuery, setSearchQuery] = useState('');
     const [formData, setFormData] = useState({
@@ -29,6 +29,7 @@ const CreateAssignment = () => {
     const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [fileName, setFileName] = useState('');
+    const [blocked, setBlocked] = useState(false);
 
     const API = import.meta.env.VITE_API_URL || 'http://localhost:7000';
     const token = localStorage.getItem('token');
@@ -45,8 +46,17 @@ const CreateAssignment = () => {
         }
     }, [user]);
 
+    useEffect(() => {
+        if (user && user.role === 'teacher' && user.isVerified === false) {
+            setBlocked(true);
+        } else {
+            setBlocked(false);
+        }
+    }, [user]);
+
     // Fetch assignments on mount
     useEffect(() => {
+        refreshUser?.();
         fetchAssignments();
     }, []);
 
@@ -131,6 +141,11 @@ const CreateAssignment = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (blocked) {
+            toast.info('Verification is pending. You cannot create assignments yet.');
+            return;
+        }
 
         if (!formData.title || !formData.courseName || !formData.marks || !formData.section || !formData.startDate || !formData.dueDate) {
             toast.error('Please fill in all required fields');
@@ -247,6 +262,10 @@ const CreateAssignment = () => {
                 <h2 className="text-xl font-bold mb-4 text-white">
                     {editingId ? 'Edit Assignment' : 'Create New Assignment'}
                 </h2>
+
+                {blocked && (
+                    <div className="mb-4 p-3 rounded bg-amber-900/40 text-amber-200">Verification is pending — limited features until admin verifies your profile.</div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -395,7 +414,7 @@ const CreateAssignment = () => {
                     <div className="flex gap-3 pt-4">
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || blocked}
                             className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {loading ? 'Saving...' : editingId ? 'Update Assignment' : 'Create Assignment'}
