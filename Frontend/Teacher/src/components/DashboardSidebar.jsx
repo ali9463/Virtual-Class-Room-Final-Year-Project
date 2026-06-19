@@ -1,7 +1,8 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, ClipboardCheck, User, LogOut, GraduationCap, X, Bot,
+import {
+  Home, ClipboardCheck, User, LogOut, GraduationCap, X, Bot,
   HelpCircle,
   FileText,
   CalendarCheck,
@@ -9,8 +10,9 @@ import { Home, ClipboardCheck, User, LogOut, GraduationCap, X, Bot,
   School,
   Video,
   CheckCircle2,
-  BarChart3
- } from 'lucide-react';
+  BarChart3,
+  Wand2
+} from 'lucide-react';
 
 const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { logout } = useAuth();
@@ -34,6 +36,8 @@ const DashboardSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     { name: 'Attendance', path: '/dashboard/attendance', icon: CalendarCheck },
     { name: 'Lectures', path: '/dashboard/lectures', icon: BookOpen },
     { name: 'Ai ChatBot', path: '/dashboard/aichatbot', icon: Bot },
+    { name: 'AI Evaluator', path: '/dashboard/aievaluator', icon: Wand2 },
+    { name: 'AI Quiz Generator', path: '/dashboard/aiquizgenerator', icon: Wand2 },
     { name: 'Class Meetings', path: '/dashboard/meetings', icon: School },
     { name: 'Assignment Checker', path: '/dashboard/checkassignments', icon: ClipboardCheck },
     { name: 'Quiz Checker', path: '/dashboard/checkquizes', icon: CheckCircle2 },

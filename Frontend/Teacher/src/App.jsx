@@ -21,6 +21,8 @@ import AttendancePage from './pages/dashboard/AttendancePage';
 import Attendence from './pages/dashboard/Attendence';
 import Lectures from './pages/dashboard/Lectures';
 import AiChatBot from './pages/dashboard/AiChatBot';
+import AiAssignmentEvaluator from './pages/dashboard/AiAssignmentEvaluator';
+import AiQuizGenerator from './pages/dashboard/AiQuizGenerator';
 import Classes from './pages/dashboard/Classes';
 import Meetings from './pages/dashboard/Meetings';
 import AssignmentsPage from './pages/dashboard/AssignmentsPage';
@@ -72,6 +74,8 @@ function App() {
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="marks" element={<MarksPage />} />
               <Route path="checkassignments" element={<AssignmentChecker />} />
+              <Route path="aievaluator" element={<AiAssignmentEvaluator />} />
+              <Route path="aiquizgenerator" element={<AiQuizGenerator />} />
               <Route path="checkquizes" element={<QuizChecker />} />
               <Route path="attendance" element={<AttendancePage />} />
               <Route path="lectures" element={<Lectures />} />

@@ -151,10 +151,22 @@ exports.chat = async (req, res) => {
         const ai = new GoogleGenAI({ apiKey });
         const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
         console.log("Using GenAI model:", model);
-        const gen = await ai.models.generateContent({
-          model,
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        });
+
+        // Add timeout wrapper (30 seconds)
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("API request timeout after 30 seconds")),
+            30000,
+          ),
+        );
+
+        const gen = await Promise.race([
+          ai.models.generateContent({
+            model,
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          }),
+          timeoutPromise,
+        ]);
 
         // Extract reply text robustly for different SDK response shapes
         let reply = "";
@@ -207,6 +219,24 @@ exports.chat = async (req, res) => {
         return res.json({ reply });
       } catch (sdkErr) {
         console.error("Google GenAI SDK error", sdkErr);
+
+        // Check for timeout/network errors
+        if (
+          sdkErr?.message?.includes("timeout") ||
+          sdkErr?.code === "ETIMEDOUT" ||
+          sdkErr?.cause?.code === "ETIMEDOUT"
+        ) {
+          if (useMock) {
+            const mockReply = `Mock reply (API timeout). Context:\n${prompt.slice(0, 1000)}\n\n(Try again - temporary network issue)`;
+            return res.json({ reply: mockReply });
+          }
+          return res.status(503).json({
+            message:
+              "AI service is temporarily unavailable (timeout). Please try again in a moment.",
+            error: "API_TIMEOUT",
+          });
+        }
+
         if (useMock) {
           const mockReply = `Mock reply (AI service unavailable). Context:\n${prompt.slice(0, 1000)}\n\n(Enable a real GEMINI_API_URL and GEMINI_API_KEY to use the live model)`;
           return res.json({ reply: mockReply });

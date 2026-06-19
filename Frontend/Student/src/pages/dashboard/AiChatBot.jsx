@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../context/AuthContext';
-import { Paperclip, Send, Loader } from 'lucide-react';
+import { Paperclip, Send, Loader, X } from 'lucide-react';
 
 const AiChatBot = () => {
   const { token } = useAuth();
@@ -79,7 +80,29 @@ const AiChatBot = () => {
             {messages.map(m => (
               <div key={m.id} className={`mb-4 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[78%] px-4 py-3 rounded-lg ${m.role === 'user' ? 'bg-cyan-600 text-white' : 'bg-gray-700 text-gray-200'}`}>
-                  <div className="text-sm whitespace-pre-wrap">{m.text}</div>
+                  {m.role === 'assistant' ? (
+                    <div className="prose prose-invert max-w-none text-sm">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                          strong: ({ node, ...props }) => <strong className="font-bold text-cyan-300" {...props} />,
+                          em: ({ node, ...props }) => <em className="italic" {...props} />,
+                          code: ({ node, ...props }) => <code className="bg-gray-900 px-2 py-1 rounded text-yellow-300 text-xs" {...props} />,
+                          h1: ({ node, ...props }) => <h1 className="text-lg font-bold mt-2 mb-1" {...props} />,
+                          h2: ({ node, ...props }) => <h2 className="text-base font-bold mt-2 mb-1" {...props} />,
+                          h3: ({ node, ...props }) => <h3 className="text-sm font-bold mt-2 mb-1" {...props} />,
+                          ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2" {...props} />,
+                          ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2" {...props} />,
+                          li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                          blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-cyan-400 pl-3 italic my-2" {...props} />,
+                        }}
+                      >
+                        {m.text}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="text-sm whitespace-pre-wrap">{m.text}</div>
+                  )}
                   <div className="text-xs text-gray-400 mt-2 text-right">{new Date(m.time).toLocaleString()}</div>
                 </div>
               </div>
@@ -88,13 +111,21 @@ const AiChatBot = () => {
           </div>
 
           <div className="mt-4 bg-gray-800 p-4 rounded-lg border border-gray-700">
+            {file && (
+              <div className="mb-3 p-2 bg-gray-700 rounded border border-gray-600 flex items-center justify-between">
+                <span className="text-sm text-gray-300">📎 {file.name}</span>
+                <button onClick={() => setFile(null)} className="text-gray-400 hover:text-red-400">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-3">
-              <input value={input} onChange={e => setInput(e.target.value)} placeholder="Ask the assistant..." className="flex-1 px-4 py-3 rounded bg-gray-900 border border-gray-700 text-white focus:outline-none" />
-              <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+              <input value={input} onChange={e => setInput(e.target.value)} placeholder="Ask the assistant..." className="flex-1 px-4 py-3 rounded bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-cyan-500" />
+              <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-gray-300">
                 <Paperclip className="w-4 h-4" />
                 <input type="file" onChange={e => setFile(e.target.files[0])} className="hidden" />
               </label>
-              <button onClick={send} disabled={loading} className="px-4 py-2 bg-cyan-600 rounded text-white flex items-center gap-2">
+              <button onClick={send} disabled={loading} className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded text-white flex items-center gap-2 disabled:bg-gray-600">
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} <span>{loading ? 'Thinking...' : 'Send'}</span>
               </button>
             </div>
